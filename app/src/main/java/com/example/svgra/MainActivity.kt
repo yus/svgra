@@ -1,4 +1,4 @@
-package com.example.mysvgeditor
+package com.example.svgra
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
