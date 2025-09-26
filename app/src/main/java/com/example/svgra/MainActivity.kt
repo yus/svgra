@@ -1,12 +1,14 @@
 package com.example.svgra
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // We'll work with a custom view instead of XML
-        setContentView(CustomSvgView(this))
+        
+        // Create a basic SVG-capable view
+        val svgView = CustomSvgView(this)
+        setContentView(svgView)
     }
 }
