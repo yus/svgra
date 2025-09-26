@@ -7,7 +7,7 @@ android {
     compileSdk = 34
     
     defaultConfig {
-        applicationId = "com.example.mysvgeditor"
+        applicationId = "com.example.svgra"
         minSdk = 21
         targetSdk = 34
         versionCode = 1
