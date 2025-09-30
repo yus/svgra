@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Include Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SVG Editor</h1>
+            <div class="user-controls">
+                <button id="loginBtn">Login</button>
+                <button id="saveBtn" disabled>Save to Cloud</button>
+                <button id="loadBtn" disabled>Load from Cloud</button>
+            </div>
+        </header>
+
+        <div class="editor-container">
+            <!-- Tools Panel -->
+            <div class="tools-panel">
+                <h3>Shapes</h3>
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="select">Select</button>
+                    <button class="tool-btn" data-tool="rectangle">Rectangle</button>
+                    <button class="tool-btn" data-tool="circle">Circle</button>
+                    <button class="tool-btn" data-tool="line">Line</button>
+                    <button class="tool-btn" data-tool="text">Text</button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>Properties</h3>
+                    <label>Fill Color:
+                        <input type="color" id="fillColor" value="#3498db">
+                    </label>
+                    <label>Stroke Color:
+                        <input type="color" id="strokeColor" value="#2c3e50">
+                    </label>
+                    <label>Stroke Width:
+                        <input type="number" id="strokeWidth" value="2" min="1" max="10">
+                    </label>
+                </div>
+
+                <div class="tool-group">
+                    <button id="clearBtn">Clear Canvas</button>
+                    <button id="exportBtn">Export SVG</button>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="canvas-container">
+                <svg id="svgCanvas" width="800" height="600"></svg>
+            </div>
+        </div>
+
+        <div class="saved-designs">
+            <h3>Saved Designs</h3>
+            <div id="designsList"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="firebase.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
