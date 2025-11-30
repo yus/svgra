@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random SVG Shape Generator</title>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6b8cbc;
+            --light: #f5f7fa;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --border: #ddd;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .panel-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: var(--dark);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        
+        .preview-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .canvas-container {
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            overflow: hidden;
+            background: white;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        
+        #shape-canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .shape-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .shape-preview {
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 10px;
+            background: #f9f9f9;
+            text-align: center;
+        }
+        
+        .shape-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+        
+        .shape-svg {
+            width: 100%;
+            height: 120px;
+            background: white;
+            border: 1px solid #eee;
+        }
+        
+        .output-area {
+            margin-top: 20px;
+        }
+        
+        .code-output {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .op-btn {
+            padding: 8px;
+            text-align: center;
+            background: #f0f0f0;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .op-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .op-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .history-panel {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .history-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .color-picker input {
+            width: 60px;
+            height: 40px;
+            padding: 0;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Random SVG Shape Generator</h1>
+            <p class="description">Generate random shapes with boolean operations and export as SVG. Perfect for creating unique glyph elements.</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2 class="panel-title">Shape Parameters</h2>
+                
+                <div class="form-group">
+                    <label for="shape-type">Base Shape Type:</label>
+                    <select id="shape-type">
+                        <option value="polygon">Polygon</option>
+                        <option value="star">Star</option>
+                        <option value="blob">Organic Blob</option>
+                        <option value="spiral">Spiral</option>
+                        <option value="gear">Gear</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="complexity">Complexity:</label>
+                    <div class="slider-container">
+                        <input type="range" id="complexity" min="3" max="20" value="8">
+                        <span class="slider-value" id="complexity-value">8</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="irregularity">Irregularity:</label>
+                    <div class="slider-container">
+                        <input type="range" id="irregularity" min="0" max="100" value="30">
+                        <span class="slider-value" id="irregularity-value">30%</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="size">Size:</label>
+                    <div class="slider-container">
+                        <input type="range" id="size" min="10" max="200" value="100">
+                        <span class="slider-value" id="size-value">100</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Colors:</label>
+                    <div class="color-picker">
+                        <div>
+                            <label for="fill-color">Fill</label>
+                            <input type="color" id="fill-color" value="#4a6fa5">
+                        </div>
+                        <div>
+                            <label for="stroke-color">Stroke</label>
+                            <input type="color" id="stroke-color" value="#2c3e50">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="stroke-width">Stroke Width:</label>
+                    <div class="slider-container">
+                        <input type="range" id="stroke-width" min="0" max="10" value="2">
+                        <span class="slider-value" id="stroke-width-value">2</span>
+                    </div>
+                </div>
+                
+                <h2 class="panel-title">Boolean Operations</h2>
+                
+                <div class="form-group">
+                    <label>Operation Type:</label>
+                    <div class="operations-grid">
+                        <div class="op-btn active" data-op="union">Union</div>
+                        <div class="op-btn" data-op="intersect">Intersect</div>
+                        <div class="op-btn" data-op="subtract">Subtract</div>
+                        <div class="op-btn" data-op="exclude">Exclude</div>
+                        <div class="op-btn" data-op="divide">Divide</div>
+                        <div class="op-btn" data-op="none">None</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-second-shape" checked>
+                        <label for="use-second-shape">Use Second Shape</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="second-shape-type">Second Shape Type:</label>
+                    <select id="second-shape-type">
+                        <option value="circle">Circle</option>
+                        <option value="rectangle">Rectangle</option>
+                        <option value="polygon">Polygon</option>
+                        <option value="star">Star</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button id="generate-btn" class="btn-primary">Generate Shapes</button>
+                    <button id="randomize-btn" class="btn-secondary">Randomize All</button>
+                </div>
+                
+                <div class="button-group">
+                    <button id="export-btn" class="btn-primary">Export SVG</button>
+                    <button id="clear-btn" class="btn-secondary">Clear Canvas</button>
+                </div>
+                
+                <div class="history-panel">
+                    <h2 class="panel-title">Shape History</h2>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+            
+            <div class="panel preview-area">
+                <h2 class="panel-title">Preview</h2>
+                
+                <div class="canvas-container">
+                    <svg id="shape-canvas" width="500" height="400" viewBox="0 0 500 400"></svg>
+                </div>
+                
+                <div class="shape-controls">
+                    <div class="shape-preview">
+                        <div class="shape-title">Shape 1</div>
+                        <svg class="shape-svg" id="shape1-preview" viewBox="0 0 100 100"></svg>
+                    </div>
+                    <div class="shape-preview">
+                        <div class="shape-title">Shape 2</div>
+                        <svg class="shape-svg" id="shape2-preview" viewBox="0 0 100 100"></svg>
+                    </div>
+                </div>
+                
+                <div class="output-area">
+                    <h2 class="panel-title">SVG Output</h2>
+                    <div class="code-output" id="svg-output"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const shapeType = document.getElementById('shape-type');
+        const complexity = document.getElementById('complexity');
+        const irregularity = document.getElementById('irregularity');
+        const size = document.getElementById('size');
+        const fillColor = document.getElementById('fill-color');
+        const strokeColor = document.getElementById('stroke-color');
+        const strokeWidth = document.getElementById('stroke-width');
+        const useSecondShape = document.getElementById('use-second-shape');
+        const secondShapeType = document.getElementById('second-shape-type');
+        const generateBtn = document.getElementById('generate-btn');
+        const randomizeBtn = document.getElementById('randomize-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const shapeCanvas = document.getElementById('shape-canvas');
+        const shape1Preview = document.getElementById('shape1-preview');
+        const shape2Preview = document.getElementById('shape2-preview');
+        const svgOutput = document.getElementById('svg-output');
+        const historyList = document.getElementById('history-list');
+        
+        // Value displays
+        const complexityValue = document.getElementById('complexity-value');
+        const irregularityValue = document.getElementById('irregularity-value');
+        const sizeValue = document.getElementById('size-value');
+        const strokeWidthValue = document.getElementById('stroke-width-value');
+        
+        // Operation buttons
+        const opButtons = document.querySelectorAll('.op-btn');
+        
+        // State
+        let currentShapes = [];
+        let currentOperation = 'union';
+        let shapeHistory = [];
+        
+        // Initialize
+        function init() {
+            // Set up event listeners
+            generateBtn.addEventListener('click', generateShapes);
+            randomizeBtn.addEventListener('click', randomizeAll);
+            exportBtn.addEventListener('click', exportSVG);
+            clearBtn.addEventListener('click', clearCanvas);
+            
+            // Slider value updates
+            complexity.addEventListener('input', updateComplexityValue);
+            irregularity.addEventListener('input', updateIrregularityValue);
+            size.addEventListener('input', updateSizeValue);
+            strokeWidth.addEventListener('input', updateStrokeWidthValue);
+            
+            // Operation buttons
+            opButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    opButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentOperation = btn.getAttribute('data-op');
+                    if (currentShapes.length > 0) {
+                        renderShapes();
+                    }
+                });
+            });
+            
+            // Initialize values
+            updateComplexityValue();
+            updateIrregularityValue();
+            updateSizeValue();
+            updateStrokeWidthValue();
+            
+            // Generate initial shapes
+            generateShapes();
+        }
+        
+        // Update slider value displays
+        function updateComplexityValue() {
+            complexityValue.textContent = complexity.value;
+        }
+        
+        function updateIrregularityValue() {
+            irregularityValue.textContent = `${irregularity.value}%`;
+        }
+        
+        function updateSizeValue() {
+            sizeValue.textContent = size.value;
+        }
+        
+        function updateStrokeWidthValue() {
+            strokeWidthValue.textContent = strokeWidth.value;
+        }
+        
+        // Generate random shapes
+        function generateShapes() {
+            // Clear canvas but keep history
+            shapeCanvas.innerHTML = '';
+            shape1Preview.innerHTML = '';
+            shape2Preview.innerHTML = '';
+            
+            // Generate first shape
+            const shape1 = generateShape(
+                shapeType.value,
+                parseInt(complexity.value),
+                parseInt(irregularity.value),
+                parseInt(size.value),
+                150, 150 // center x, y
+            );
+            
+            // Generate second shape if enabled
+            let shape2 = null;
+            if (useSecondShape.checked) {
+                shape2 = generateShape(
+                    secondShapeType.value,
+                    Math.max(3, parseInt(complexity.value) - 2),
+                    parseInt(irregularity.value),
+                    parseInt(size.value) * 0.7,
+                    350, 250 // center x, y
+                );
+            }
+            
+            currentShapes = [shape1, shape2];
+            
+            // Render shapes
+            renderShapes();
+            
+            // Add to history
+            addToHistory(shape1, shape2);
+        }
+        
+        // Generate a single shape
+        function generateShape(type, complexity, irregularity, size, centerX, centerY) {
+            let pathData = '';
+            
+            switch(type) {
+                case 'polygon':
+                    pathData = generatePolygon(complexity, size, centerX, centerY, irregularity);
+                    break;
+                case 'star':
+                    pathData = generateStar(complexity, size, centerX, centerY, irregularity);
+                    break;
+                case 'blob':
+                    pathData = generateBlob(complexity, size, centerX, centerY, irregularity);
+                    break;
+                case 'spiral':
+                    pathData = generateSpiral(size, centerX, centerY);
+                    break;
+                case 'gear':
+                    pathData = generateGear(complexity, size, centerX, centerY);
+                    break;
+                case 'circle':
+                    pathData = generateCircle(size, centerX, centerY);
+                    break;
+                case 'rectangle':
+                    pathData = generateRectangle(size, centerX, centerY, irregularity);
+                    break;
+            }
+            
+            return {
+                type: type,
+                path: pathData,
+                fill: fillColor.value,
+                stroke: strokeColor.value,
+                strokeWidth: strokeWidth.value
+            };
+        }
+        
+        // Generate a polygon
+        function generatePolygon(sides, size, cx, cy, irregularity) {
+            const points = [];
+            const angleStep = (Math.PI * 2) / sides;
+            
+            for (let i = 0; i < sides; i++) {
+                const angle = i * angleStep;
+                const radius = size * (1 - (Math.random() * irregularity / 200));
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                points.push([x, y]);
+            }
+            
+            return pointsToPath(points, true);
+        }
+        
+        // Generate a star
+        function generateStar(points, size, cx, cy, irregularity) {
+            const starPoints = [];
+            const angleStep = (Math.PI * 2) / points;
+            
+            for (let i = 0; i < points * 2; i++) {
+                const angle = i * angleStep / 2;
+                const radius = i % 2 === 0 ? size : size * 0.5;
+                const variedRadius = radius * (1 - (Math.random() * irregularity / 300));
+                const x = cx + variedRadius * Math.cos(angle);
+                const y = cy + variedRadius * Math.sin(angle);
+                starPoints.push([x, y]);
+            }
+            
+            return pointsToPath(starPoints, true);
+        }
+        
+        // Generate an organic blob
+        function generateBlob(complexity, size, cx, cy, irregularity) {
+            const points = [];
+            const angleStep = (Math.PI * 2) / complexity;
+            
+            for (let i = 0; i < complexity; i++) {
+                const angle = i * angleStep;
+                const noise = 1 - (Math.random() * irregularity / 150);
+                const radius = size * noise;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                points.push([x, y]);
+            }
+            
+            // Make it smoother with curves
+            return pointsToCurvedPath(points, true);
+        }
+        
+        // Generate a spiral
+        function generateSpiral(size, cx, cy) {
+            let path = `M ${cx},${cy}`;
+            const turns = 3;
+            const segments = 50;
+            
+            for (let i = 1; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2 * turns;
+                const radius = (i / segments) * size;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                path += ` L ${x},${y}`;
+            }
+            
+            return path;
+        }
+        
+        // Generate a gear
+        function generateGear(teeth, size, cx, cy) {
+            const points = [];
+            const angleStep = (Math.PI * 2) / teeth;
+            
+            for (let i = 0; i < teeth; i++) {
+                const angle = i * angleStep;
+                
+                // Outer point
+                const outerRadius = size;
+                const outerX = cx + outerRadius * Math.cos(angle);
+                const outerY = cy + outerRadius * Math.sin(angle);
+                points.push([outerX, outerY]);
+                
+                // Inner point
+                const innerAngle = angle + angleStep / 2;
+                const innerRadius = size * 0.7;
+                const innerX = cx + innerRadius * Math.cos(innerAngle);
+                const innerY = cy + innerRadius * Math.sin(innerAngle);
+                points.push([innerX, innerY]);
+            }
+            
+            return pointsToPath(points, true);
+        }
+        
+        // Generate a circle
+        function generateCircle(size, cx, cy) {
+            return `M ${cx},${cy} m -${size},0 a ${size},${size} 0 1,0 ${size*2},0 a ${size},${size} 0 1,0 -${size*2},0`;
+        }
+        
+        // Generate a rectangle
+        function generateRectangle(size, cx, cy, irregularity) {
+            const width = size * (1 - (Math.random() * irregularity / 200));
+            const height = size * (1 - (Math.random() * irregularity / 200));
+            const x = cx - width/2;
+            const y = cy - height/2;
+            
+            return `M ${x},${y} h ${width} v ${height} h -${width} z`;
+        }
+        
+        // Convert points array to SVG path
+        function pointsToPath(points, closed) {
+            if (points.length === 0) return '';
+            
+            let path = `M ${points[0][0]},${points[0][1]}`;
+            
+            for (let i = 1; i < points.length; i++) {
+                path += ` L ${points[i][0]},${points[i][1]}`;
+            }
+            
+            if (closed) {
+                path += ' Z';
+            }
+            
+            return path;
+        }
+        
+        // Convert points to curved path (for organic shapes)
+        function pointsToCurvedPath(points, closed) {
+            if (points.length < 3) return pointsToPath(points, closed);
+            
+            let path = `M ${points[0][0]},${points[0][1]}`;
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const xc = (points[i][0] + points[i + 1][0]) / 2;
+                const yc = (points[i][1] + points[i + 1][1]) / 2;
+                path += ` Q ${points[i][0]},${points[i][1]} ${xc},${yc}`;
+            }
+            
+            if (closed) {
+                // Close the path with a curve
+                const xc = (points[points.length - 1][0] + points[0][0]) / 2;
+                const yc = (points[points.length - 1][1] + points[0][1]) / 2;
+                path += ` Q ${points[points.length - 1][0]},${points[points.length - 1][1]} ${xc},${yc}`;
+                path += ` Q ${points[0][0]},${points[0][1]} ${points[0][0]},${points[0][1]}`;
+            } else {
+                path += ` L ${points[points.length - 1][0]},${points[points.length - 1][1]}`;
+            }
+            
+            return path;
+        }
+        
+        // Render shapes to canvas
+        function renderShapes() {
+            shapeCanvas.innerHTML = '';
+            shape1Preview.innerHTML = '';
+            shape2Preview.innerHTML = '';
+            
+            const shape1 = currentShapes[0];
+            const shape2 = currentShapes[1];
+            
+            // Render individual shapes to preview
+            renderShapeToSVG(shape1, shape1Preview, 50, 50, 80);
+            if (shape2) {
+                renderShapeToSVG(shape2, shape2Preview, 50, 50, 80);
+            }
+            
+            // Render to main canvas based on operation
+            if (!shape2 || currentOperation === 'none') {
+                // Just render shapes separately
+                renderShapeToSVG(shape1, shapeCanvas, 150, 150, parseInt(size.value));
+                if (shape2) {
+                    renderShapeToSVG(shape2, shapeCanvas, 350, 250, parseInt(size.value) * 0.7);
+                }
+            } else {
+                // For boolean operations, we'll simulate with opacity
+                // In a real implementation, you would use a library like paper.js or fabric.js
+                renderShapeToSVG(shape1, shapeCanvas, 250, 200, parseInt(size.value));
+                renderShapeToSVG(shape2, shapeCanvas, 250, 200, parseInt(size.value) * 0.7, 0.7);
+                
+                // Add operation indicator
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", "250");
+                text.setAttribute("y", "350");
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("fill", "#666");
+                text.setAttribute("font-size", "14");
+                text.textContent = `Operation: ${currentOperation}`;
+                shapeCanvas.appendChild(text);
+            }
+            
+            // Update SVG output
+            updateSVGOutput();
+        }
+        
+        // Render a shape to an SVG element
+        function renderShapeToSVG(shape, svgElement, cx, cy, size, opacity = 1) {
+            if (!shape) return;
+            
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", shape.path);
+            path.setAttribute("fill", shape.fill);
+            path.setAttribute("stroke", shape.stroke);
+            path.setAttribute("stroke-width", shape.strokeWidth);
+            path.setAttribute("opacity", opacity);
+            path.setAttribute("fill-rule", "evenodd");
+            
+            svgElement.appendChild(path);
+        }
+        
+        // Update SVG output code
+        function updateSVGOutput() {
+            const shape1 = currentShapes[0];
+            const shape2 = currentShapes[1];
+            
+            let output = '<!-- Generated SVG Shape -->\n';
+            output += `<svg width="500" height="400" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">\n`;
+            
+            if (!shape2 || currentOperation === 'none') {
+                output += `  <!-- Shape 1 -->\n`;
+                output += `  <path d="${shape1.path}" fill="${shape1.fill}" stroke="${shape1.stroke}" stroke-width="${shape1.strokeWidth}" />\n`;
+                
+                if (shape2) {
+                    output += `  <!-- Shape 2 -->\n`;
+                    output += `  <path d="${shape2.path}" fill="${shape2.fill}" stroke="${shape2.stroke}" stroke-width="${shape2.strokeWidth}" />\n`;
+                }
+            } else {
+                output += `  <!-- Combined Shapes (${currentOperation}) -->\n`;
+                output += `  <path d="${shape1.path}" fill="${shape1.fill}" stroke="${shape1.stroke}" stroke-width="${shape1.strokeWidth}" opacity="1" />\n`;
+                output += `  <path d="${shape2.path}" fill="${shape2.fill}" stroke="${shape2.stroke}" stroke-width="${shape2.strokeWidth}" opacity="0.7" />\n`;
+            }
+            
+            output += `</svg>`;
+            
+            svgOutput.textContent = output;
+        }
+        
+        // Add shapes to history
+        function addToHistory(shape1, shape2) {
+            const historyItem = {
+                shape1: {...shape1},
+                shape2: shape2 ? {...shape2} : null,
+                operation: currentOperation,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            shapeHistory.unshift(historyItem);
+            
+            // Keep only last 10 items
+            if (shapeHistory.length > 10) {
+                shapeHistory.pop();
+            }
+            
+            updateHistoryList();
+        }
+        
+        // Update history list display
+        function updateHistoryList() {
+            historyList.innerHTML = '';
+            
+            shapeHistory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.textContent = `${item.timestamp} - ${item.shape1.type} ${item.shape2 ? `+ ${item.shape2.type}` : ''} (${item.operation})`;
+                
+                div.addEventListener('click', () => {
+                    // Restore this shape set
+                    currentShapes = [item.shape1, item.shape2];
+                    currentOperation = item.operation;
+                    
+                    // Update operation buttons
+                    opButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.getAttribute('data-op') === item.operation);
+                    });
+                    
+                    renderShapes();
+                });
+                
+                historyList.appendChild(div);
+            });
+        }
+        
+        // Randomize all parameters
+        function randomizeAll() {
+            // Randomize shape type
+            const types = ['polygon', 'star', 'blob', 'spiral', 'gear'];
+            shapeType.value = types[Math.floor(Math.random() * types.length)];
+            
+            // Randomize second shape type
+            const secondTypes = ['circle', 'rectangle', 'polygon', 'star'];
+            secondShapeType.value = secondTypes[Math.floor(Math.random() * secondTypes.length)];
+            
+            // Randomize sliders
+            complexity.value = Math.floor(Math.random() * 15) + 5;
+            irregularity.value = Math.floor(Math.random() * 80) + 10;
+            size.value = Math.floor(Math.random() * 150) + 50;
+            strokeWidth.value = Math.floor(Math.random() * 8) + 1;
+            
+            // Randomize colors
+            fillColor.value = getRandomColor();
+            strokeColor.value = getRandomColor();
+            
+            // Randomize operation
+            const operations = ['union', 'intersect', 'subtract', 'exclude', 'divide', 'none'];
+            currentOperation = operations[Math.floor(Math.random() * operations.length)];
+            
+            // Update UI
+            updateComplexityValue();
+            updateIrregularityValue();
+            updateSizeValue();
+            updateStrokeWidthValue();
+            
+            // Update operation buttons
+            opButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-op') === currentOperation);
+            });
+            
+            // Generate new shapes
+            generateShapes();
+        }
+        
+        // Get a random color
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        
+        // Export SVG
+        function exportSVG() {
+            const svgString = svgOutput.textContent;
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shape-${Date.now()}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Clear canvas
+        function clearCanvas() {
+            shapeCanvas.innerHTML = '';
+            shape1Preview.innerHTML = '';
+            shape2Preview.innerHTML = '';
+            svgOutput.textContent = '<!-- Canvas cleared -->';
+            currentShapes = [];
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
