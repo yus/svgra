@@ -530,6 +530,65 @@
                 background: #475569;
             }
         }
+        /* Stats Bar Styles */
+.stats-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: linear-gradient(90deg, #f8fafc, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 8px 20px;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+    font-size: 13px;
+    color: #4b5563;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    transition: all 0.2s ease;
+}
+
+.stat:hover {
+    background: white;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: #4f46e5;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .stats-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    
+    .stat {
+        flex: 1;
+        min-width: calc(50% - 20px);
+        justify-content: space-between;
+    }
+}
     </style>
     </head>
 <body>
@@ -566,6 +625,25 @@
                 </div>
             </div>
         </header>
+        <!-- Add this right after </header> -->
+<div class="stats-bar" id="statsBar">
+    <div class="stat">
+        <span class="stat-label">Elements:</span>
+        <span class="stat-value" id="statElements">0</span>
+    </div>
+    <div class="stat">
+        <span class="stat-label">Size:</span>
+        <span class="stat-value" id="statSize">0 B</span>
+    </div>
+    <div class="stat">
+        <span class="stat-label">Depth:</span>
+        <span class="stat-value" id="statDepth">0</span>
+    </div>
+    <div class="stat">
+        <span class="stat-label">Last Update:</span>
+        <span class="stat-value" id="statUpdate">Just now</span>
+    </div>
+</div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -1040,6 +1118,68 @@
                 }, 400);
             }, 3000);
         }
+        // Add this function to calculate and update stats
+function updateStatsBar() {
+    try {
+        const svgCode = editor.value;
+        
+        // Calculate element count
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgCode, 'image/svg+xml');
+        const allElements = svgDoc.querySelectorAll('*');
+        const elementCount = allElements.length;
+        
+        // Calculate file size
+        const codeSize = new Blob([svgCode]).size;
+        const sizeText = codeSize < 1024 ? 
+            `${codeSize} B` : 
+            `${(codeSize / 1024).toFixed(1)} KB`;
+        
+        // Calculate max nesting depth
+        const root = svgDoc.documentElement;
+        let maxDepth = 0;
+        
+        function getDepth(node, currentDepth) {
+            if (node.children.length === 0) return currentDepth;
+            let maxChildDepth = currentDepth;
+            for (const child of node.children) {
+                maxChildDepth = Math.max(maxChildDepth, getDepth(child, currentDepth + 1));
+            }
+            return maxChildDepth;
+        }
+        
+        if (root && root.tagName === 'svg') {
+            maxDepth = getDepth(root, 0);
+        }
+        
+        // Update the DOM elements
+        document.getElementById('statElements').textContent = elementCount;
+        document.getElementById('statSize').textContent = sizeText;
+        document.getElementById('statDepth').textContent = maxDepth;
+        document.getElementById('statUpdate').textContent = 'Just now';
+        
+        // Add a timestamp reset after 2 seconds
+        clearTimeout(window.statsTimer);
+        window.statsTimer = setTimeout(() => {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('statUpdate').textContent = timeStr;
+        }, 2000);
+        
+    } catch (error) {
+        // Silent fail - don't break the app if stats can't be calculated
+        console.debug('Stats calculation skipped:', error.message);
+    }
+}
+
+// Connect to editor input (add this with your other event listeners)
+editor.addEventListener('input', updateStatsBar);
+
+// Initialize on first load
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for editor to be ready
+    setTimeout(updateStatsBar, 100);
+});
 
         // ====== INITIALIZE APP ======
         // Set up beforeunload warning
