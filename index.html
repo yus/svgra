@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SVGRA - Native Prototype</title>
+    <style>
+        body { margin: 0; font-family: monospace; }
+        #container { display: flex; height: 100vh; }
+        #editor { 
+            width: 50%; 
+            height: 100%;
+            padding: 10px;
+            border: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+        }
+        #preview { 
+            width: 50%; 
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+        .error { color: red; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div id="preview"></div>
+    </div>
+
+    <script>
+        // Initial SVG
+        const initialSVG = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Edit me directly -->
+  <rect x="50" y="50" width="100" height="80" fill="#3ba0ff" stroke="#1a5fb4" stroke-width="2"/>
+  <circle cx="250" cy="150" r="60" fill="#ff6b8b" opacity="0.8"/>
+  <text x="30" y="280" font-family="Arial" font-size="16">Native SVG Editor</text>
+</svg>`;
+
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        
+        editor.value = initialSVG;
+        
+        function renderPreview() {
+            const svgCode = editor.value;
+            
+            // Clear previous
+            preview.innerHTML = '';
+            
+            try {
+                // Parse as SVG XML
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgCode, 'image/svg+xml');
+                
+                // Check for errors
+                const error = svgDoc.querySelector('parsererror');
+                if (error) {
+                    preview.innerHTML = `<div class="error">XML Error: ${error.textContent}</div>`;
+                    return;
+                }
+                
+                // Get and render SVG
+                const svgElement = svgDoc.documentElement;
+                const importedSvg = document.importNode(svgElement, true);
+                preview.appendChild(importedSvg);
+                
+                // Make elements interactive
+                makeDraggable(importedSvg);
+                
+            } catch (err) {
+                preview.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+        
+        // Optional: Simple drag for rectangles
+        function makeDraggable(svg) {
+            svg.querySelectorAll('rect, circle').forEach(element => {
+                element.style.cursor = 'move';
+                element.addEventListener('mousedown', startDrag);
+            });
+        }
+        
+        // Basic drag implementation (you'd expand this)
+        function startDrag(e) {
+            console.log('Dragging:', e.target.tagName, 'id:', e.target.id || 'no id');
+            // Your drag logic here
+        }
+        
+        // Update preview on input
+        editor.addEventListener('input', renderPreview);
+        
+        // Initial render
+        renderPreview();
+        
+        // Tab key support in textarea
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 2;
+            }
+        });
+    </script>
+</body>
+</html>
