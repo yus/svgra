@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG RA Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.4;
+            overflow: hidden;
+        }
+
+        /* 1. App container with minimal padding */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            padding: 3px;
+            gap: 3px;
+        }
+
+        /* 2. Header - minimized */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 0; /* 1a. No rounding */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-height: 44px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            height: 28px;
+            width: auto;
+        }
+
+        .app-title {
+            font-size: 0.85em; /* 2. Smaller font size */
+            font-weight: 600;
+            color: #222;
+            white-space: nowrap;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 6px 12px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 0; /* 1a. No rounding */
+            cursor: pointer;
+            font-size: 0.8em;
+            color: #333;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0052a3;
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 3px;
+            min-height: 0;
+        }
+
+        /* Editor panel */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 0; /* 1a. No rounding */
+            overflow: hidden;
+            min-width: 300px;
+        }
+
+        .panel-header {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #222;
+        }
+
+        /* Editor container */
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            color: #333;
+            background: #fff;
+        }
+
+        /* Preview panel */
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff; /* 3. Clear white background */
+            border: 1px solid #ddd;
+            border-radius: 0; /* 1a. No rounding */
+            overflow: hidden;
+            min-width: 300px;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff; /* 3. Removed rotated square background */
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        /* Object selector */
+        .object-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+            border-radius: 0;
+            padding: 8px;
+            font-size: 0.8em;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 150px;
+        }
+
+        .object-selector select {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 0;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        /* Footer */
+        .footer {
+            background: #fff;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 0; /* 1a. No rounding */
+            font-size: 0.75em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 32px;
+        }
+
+        .status {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Settings button */
+        #settingsBtn {
+            margin-left: auto;
+        }
+
+        /* Settings modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-content {
+            background: white;
+            border-radius: 0;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .settings-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-body {
+            padding: 20px;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: #222;
+            font-weight: 600;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Responsive scaling for fonts */
+        @media (min-width: 1600px) {
+            #editor { font-size: 14px; }
+            .app-title { font-size: 0.9em; }
+            .panel-title { font-size: 0.95em; }
+        }
+
+        @media (min-width: 1920px) {
+            #editor { font-size: 15px; }
+            .app-title { font-size: 1em; }
+            .panel-title { font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <svg class="logo" viewBox="0 0 100 100">
+                    <rect x="10" y="10" width="80" height="80" fill="#0066cc" />
+                    <circle cx="50" cy="50" r="30" fill="white" />
+                    <path d="M35,35 L65,65 M65,35 L35,65" stroke="#0066cc" stroke-width="8" />
+                </svg>
+                <span class="app-title">SVG RA Editor</span>
+            </div>
+            
+            <div class="header-controls">
+                <button class="btn" onclick="loadExample()">Load Example</button>
+                <button class="btn btn-primary" onclick="updatePreview()">Update Preview</button>
+                <button class="btn" onclick="saveSVG()">Save SVG</button>
+                <button class="btn" id="settingsBtn" onclick="openSettings()">Settings</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Editor Panel -->
+            <section class="editor-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">SVG Editor</h2>
+                    <div class="editor-info">
+                        <span id="charCount">0 chars</span>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <textarea id="editor" placeholder="Enter your SVG code here...">&lt;svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;rect x="20" y="20" width="160" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/&gt;
+  &lt;circle cx="100" cy="100" r="60" fill="#2196F3" opacity="0.8"/&gt;
+  &lt;text x="100" y="110" text-anchor="middle" font-family="Arial" font-size="24" fill="white"&gt;SVG&lt;/text&gt;
+&lt;/svg&gt;</textarea>
+                </div>
+            </section>
+
+            <!-- Preview Panel -->
+            <section class="preview-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Preview</h2>
+                    <div class="preview-controls">
+                        <button class="btn" onclick="zoomIn()">Zoom In</button>
+                        <button class="btn" onclick="zoomOut()">Zoom Out</button>
+                        <button class="btn" onclick="resetZoom()">Reset</button>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <!-- Object Selector -->
+                    <div class="object-selector">
+                        <label for="objectSelect">Select Object:</label>
+                        <select id="objectSelect" onchange="selectObject(this.value)">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    
+                    <div id="preview"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="status">
+                <span class="status-item" id="lineCount">Lines: 1</span>
+                <span class="status-item" id="selectionInfo">Selection: 0 chars</span>
+                <span class="status-item" id="zoomLevel">Zoom: 100%</span>
+            </div>
+            <div class="version">v0.1.0 pre-alpha</div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="btn" onclick="closeSettings()">Close</button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-group">
+                    <h3>Editor Settings</h3>
+                    <div class="setting-item">
+                        <span>Font Size</span>
+                        <select id="fontSize" onchange="updateFontSize(this.value)">
+                            <option value="12">12px</option>
+                            <option value="13" selected>13px</option>
+                            <option value="14">14px</option>
+                            <option value="15">15px</option>
+                            <option value="16">16px</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Theme</span>
+                        <select id="editorTheme">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="monokai">Monokai</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Auto Update Preview</span>
+                        <input type="checkbox" id="autoUpdate" checked>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h3>Preview Settings</h3>
+                    <div class="setting-item">
+                        <span>Show Grid</span>
+                        <input type="checkbox" id="showGrid">
+                    </div>
+                    <div class="setting-item">
+                        <span>Default Zoom</span>
+                        <select id="defaultZoom">
+                            <option value="100">100%</option>
+                            <option value="75">75%</option>
+                            <option value="50">50%</option>
+                            <option value="200">200%</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h3>Application</h3>
+                    <div class="setting-item">
+                        <span>Auto Save</span>
+                        <input type="checkbox" id="autoSave">
+                    </div>
+                    <div class="setting-item">
+                        <span>Save Interval (seconds)</span>
+                        <input type="number" id="saveInterval" value="30" min="5" max="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        let zoomLevel = 100;
+        let selectedObjectId = null;
+        let svgElements = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+            updateCounters();
+            
+            // Add event listeners
+            document.getElementById('editor').addEventListener('input', function() {
+                updateCounters();
+                if (document.getElementById('autoUpdate').checked) {
+                    updatePreview();
+                }
+            });
+            
+            document.getElementById('editor').addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 2;
+                }
+            });
+            
+            // Initialize settings from localStorage
+            loadSettings();
+        });
+
+        function updatePreview() {
+            const editor = document.getElementById('editor');
+            const preview = document.getElementById('preview');
+            
+            try {
+                preview.innerHTML = editor.value;
+                
+                // Extract SVG elements for selection
+                extractSVGElements();
+                updateObjectSelector();
+                
+                // Add click handlers to SVG elements
+                addElementClickHandlers();
+                
+                // Update zoom
+                applyZoom();
+            } catch (error) {
+                preview.innerHTML = `<div style="color: red; padding: 20px;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function extractSVGElements() {
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(document.getElementById('editor').value, 'image/svg+xml');
+            svgElements = [];
+            
+            // Extract elements with ids
+            svgDoc.querySelectorAll('[id]').forEach((element, index) => {
+                if (!element.id) {
+                    element.id = `elem_${index}`;
+                }
+                svgElements.push({
+                    id: element.id,
+                    tag: element.tagName,
+                    label: `${element.tagName}#${element.id}`
+                });
+            });
+        }
+
+        function updateObjectSelector() {
+            const select = document.getElementById('objectSelect');
+            select.innerHTML = '<option value="">All</option>';
+            
+            svgElements.forEach(element => {
+                const option = document.createElement('option');
+                option.value = element.id;
+                option.textContent = element.label;
+                select.appendChild(option);
+            });
+        }
+
+        function addElementClickHandlers() {
+            const preview = document.getElementById('preview');
+            if (preview.firstChild && preview.firstChild.querySelectorAll) {
+                preview.firstChild.querySelectorAll('*').forEach(element => {
+                    element.style.cursor = 'pointer';
+                    element.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectObject(element.id || '');
+                        highlightElement(element);
+                    });
+                });
+            }
+        }
+
+        function selectObject(objectId) {
+            selectedObjectId = objectId;
+            const select = document.getElementById('objectSelect');
+            select.value = objectId;
+            
+            // Highlight the selected element
+            const preview = document.getElementById('preview');
+            if (preview.firstChild && preview.firstChild.querySelectorAll) {
+                preview.firstChild.querySelectorAll('*').forEach(element => {
+                    element.style.outline = '';
+                    element.style.opacity = '';
+                });
+                
+                if (objectId) {
+                    const selectedElem = preview.firstChild.querySelector(`#${objectId}`);
+                    if (selectedElem) {
+                        highlightElement(selectedElem);
+                    }
+                }
+            }
+        }
+
+        function highlightElement(element) {
+            element.style.outline = '2px solid #0066cc';
+            element.style.outlineOffset = '2px';
+        }
+
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel + 25, 500);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel - 25, 25);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            zoomLevel = 100;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const preview = document.getElementById('preview');
+            if (preview.firstChild) {
+                preview.firstChild.style.transform = `scale(${zoomLevel / 100})`;
+                preview.firstChild.style.transformOrigin = 'center center';
+                document.getElementById('zoomLevel').textContent = `Zoom: ${zoomLevel}%`;
+            }
+        }
+
+        function updateCounters() {
+            const editor = document.getElementById('editor');
+            const charCount = document.getElementById('charCount');
+            const lineCount = document.getElementById('lineCount');
+            const selectionInfo = document.getElementById('selectionInfo');
+            
+            // Character count
+            charCount.textContent = `${editor.value.length} chars`;
+            
+            // Line count
+            const lines = editor.value.split('\n').length;
+            lineCount.textContent = `Lines: ${lines}`;
+            
+            // Selection info
+            const selection = editor.value.substring(editor.selectionStart, editor.selectionEnd);
+            selectionInfo.textContent = `Selection: ${selection.length} chars`;
+        }
+
+        function loadExample() {
+            document.getElementById('editor').value = `<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <rect id="bg" width="300" height="200" fill="#f0f0f0"/>
+  <circle id="circle1" cx="80" cy="100" r="40" fill="#FF6B6B"/>
+  <rect id="rect1" x="150" y="60" width="80" height="80" fill="#4ECDC4"/>
+  <polygon id="triangle1" points="260,100 230,160 290,160" fill="#FFD166"/>
+  <text id="text1" x="150" y="180" text-anchor="middle" font-family="Arial" font-size="16">SVG Elements</text>
+</svg>`;
+            updatePreview();
+            updateCounters();
+        }
+
+        function saveSVG() {
+            const svgContent = document.getElementById('editor').value;
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'drawing.svg';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Settings functionality
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+            saveSettings();
+        }
+
+        function updateFontSize(size) {
+            document.getElementById('editor').style.fontSize = size + 'px';
+        }
+
+        function loadSettings() {
+            const fontSize = localStorage.getItem('svgEditor_fontSize') || '13';
+            const autoUpdate = localStorage.getItem('svgEditor_autoUpdate') !== 'false';
+            
+            document.getElementById('fontSize').value = fontSize;
+            document.getElementById('autoUpdate').checked = autoUpdate;
+            
+            updateFontSize(fontSize);
+        }
+
+        function saveSettings() {
+            const fontSize = document.getElementById('fontSize').value;
+            const autoUpdate = document.getElementById('autoUpdate').checked;
+            
+            localStorage.setItem('svgEditor_fontSize', fontSize);
+            localStorage.setItem('svgEditor_autoUpdate', autoUpdate);
+        }
+    </script>
+</body>
+</html>
