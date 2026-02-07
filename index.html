@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG RA Editor</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.4;
+            overflow: hidden;
+        }
+
+        /* Theme variables */
+        :root {
+            --primary-color: #0066cc;
+            --border-color: #ddd;
+            --bg-light: #fff;
+            --bg-dark: #1e1e1e;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --editor-bg-light: #fff;
+            --editor-bg-dark: #1e1e1e;
+            --editor-text-light: #333;
+            --editor-text-dark: #f0f0f0;
+            --selection-color: rgba(0, 102, 204, 0.2);
+        }
+
+        .dark-theme {
+            background: #2d2d2d;
+            color: #f0f0f0;
+            --border-color: #444;
+            --bg-light: #2d2d2d;
+            --text-light: #f0f0f0;
+        }
+
+        .monokai-theme {
+            background: #272822;
+            color: #f8f8f2;
+            --border-color: #75715e;
+            --bg-light: #272822;
+            --text-light: #f8f8f2;
+            --editor-bg-dark: #272822;
+            --editor-text-dark: #f8f8f2;
+        }
+
+        /* App container */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            padding: 3px;
+            gap: 3px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-light);
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-height: 44px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            height: 28px;
+            width: auto;
+        }
+
+        .app-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 6px 12px;
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 0.8em;
+            color: var(--text-light);
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn:hover {
+            background: var(--border-color);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+            border-color: #0052a3;
+        }
+
+        .btn-icon {
+            padding: 6px;
+            min-width: 36px;
+            justify-content: center;
+        }
+
+        .icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 3px;
+            min-height: 0;
+        }
+
+        /* Editor panel */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            overflow: hidden;
+            min-width: 300px;
+        }
+
+        .panel-header {
+            padding: 8px 12px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        /* Tools panel */
+        .tools-panel {
+            display: flex;
+            padding: 8px 12px;
+            gap: 8px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            min-height: 44px;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .tool-group:last-child {
+            border-right: none;
+        }
+
+        /* Editor container */
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            color: var(--editor-text-light);
+            background: var(--editor-bg-light);
+            transition: all 0.3s ease;
+        }
+
+        .dark-theme #editor {
+            color: var(--editor-text-dark);
+            background: var(--editor-bg-dark);
+        }
+
+        .monokai-theme #editor {
+            color: var(--editor-text-dark);
+            background: var(--editor-bg-dark);
+        }
+
+        /* Preview panel */
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            overflow: hidden;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+            position: relative;
+        }
+
+        /* Grid overlay */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: none;
+        }
+
+        .grid-overlay.active {
+            display: block;
+        }
+
+        /* ViewBox indicator */
+        .viewbox-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            border: 1px dashed rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .viewbox-indicator.active {
+            display: block;
+        }
+
+        /* Object selection overlay */
+        .selection-overlay {
+            position: absolute;
+            pointer-events: none;
+            border: 1px solid var(--primary-color);
+            background: rgba(0, 102, 204, 0.1);
+            z-index: 10;
+            display: none;
+        }
+
+        .selection-overlay.active {
+            display: block;
+        }
+
+        .selection-info {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0, 102, 204, 0.9);
+            color: white;
+            padding: 2px 6px;
+            font-size: 11px;
+            border-radius: 2px;
+            display: none;
+        }
+
+        .selection-info.active {
+            display: block;
+        }
+
+        /* Object selector in toolbar */
+        .object-selector-tool {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+        }
+
+        .object-selector-tool select {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-light);
+            color: var(--text-light);
+            border-radius: 0;
+            font-size: 0.9em;
+            min-width: 120px;
+        }
+
+        /* Selection highlight in editor */
+        .editor-selection-highlight {
+            background: var(--selection-color);
+            border-radius: 2px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-light);
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            font-size: 0.75em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 32px;
+        }
+
+        .dark-theme .footer {
+            color: #aaa;
+        }
+
+        .status {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Object info in footer */
+        .object-info {
+            display: flex;
+            gap: 15px;
+            margin-left: 20px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* Settings modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-content {
+            background: var(--bg-light);
+            border-radius: 0;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .settings-header {
+            padding: 15px 20px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-body {
+            padding: 20px;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-item select,
+        .setting-item input[type="text"],
+        .setting-item input[type="number"] {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-light);
+            color: var(--text-light);
+            border-radius: 0;
+        }
+
+        .setting-item input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+
+        /* Theme-specific styles */
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .theme-option:hover {
+            background: var(--border-color);
+        }
+
+        .theme-preview {
+            width: 40px;
+            height: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .theme-preview.light { background: linear-gradient(to right, #fff 50%, #f5f5f5 50%); }
+        .theme-preview.dark { background: linear-gradient(to right, #2d2d2d 50%, #1e1e1e 50%); }
+        .theme-preview.monokai { background: linear-gradient(to right, #272822 50%, #1e1e1e 50%); }
+    </style>
+</head>
+<body class="light-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <svg class="logo" viewBox="0 0 100 100">
+                    <rect x="10" y="10" width="80" height="80" fill="#0066cc" />
+                    <circle cx="50" cy="50" r="30" fill="white" />
+                    <path d="M35,35 L65,65 M65,35 L35,65" stroke="#0066cc" stroke-width="8" />
+                </svg>
+                <span class="app-title">SVG RA Editor</span>
+            </div>
+            
+            <div class="header-controls">
+                <button class="btn" onclick="loadExample()">
+                    <span class="material-icons icon">file_open</span>
+                    Example
+                </button>
+                <button class="btn btn-primary" onclick="updatePreview()">
+                    <span class="material-icons icon">refresh</span>
+                    Update
+                </button>
+                <button class="btn" onclick="saveSVG()">
+                    <span class="material-icons icon">save</span>
+                    Save
+                </button>
+                <button class="btn" id="settingsBtn" onclick="openSettings()">
+                    <span class="material-icons icon">settings</span>
+                    Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Editor Panel -->
+            <section class="editor-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">SVG Editor</h2>
+                    <div class="object-selector-tool">
+                        <label>Select:</label>
+                        <select id="editorObjectSelect" onchange="selectObjectInEditor(this.value)">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="tools-panel">
+                    <div class="tool-group">
+                        <button class="btn btn-icon" onclick="formatCode()" title="Format Code">
+                            <span class="material-icons icon">format_indent_increase</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="minifyCode()" title="Minify Code">
+                            <span class="material-icons icon">compress</span>
+                        </button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="btn btn-icon" onclick="copyCode()" title="Copy to Clipboard">
+                            <span class="material-icons icon">content_copy</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="clearEditor()" title="Clear Editor">
+                            <span class="material-icons icon">delete</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="editor-container">
+                    <textarea id="editor" placeholder="Enter your SVG code here...">&lt;svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;rect id="background" x="20" y="20" width="160" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/&gt;
+  &lt;circle id="circle1" cx="100" cy="100" r="60" fill="#2196F3" opacity="0.8"/&gt;
+  &lt;text id="text1" x="100" y="110" text-anchor="middle" font-family="Arial" font-size="24" fill="white"&gt;SVG&lt;/text&gt;
+&lt;/svg&gt;</textarea>
+                </div>
+            </section>
+
+            <!-- Preview Panel -->
+            <section class="preview-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Preview</h2>
+                    <div class="object-selector-tool">
+                        <label>Select:</label>
+                        <select id="previewObjectSelect" onchange="selectObjectInPreview(this.value)">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="tools-panel">
+                    <div class="tool-group">
+                        <button class="btn btn-icon" onclick="zoomIn()" title="Zoom In">
+                            <span class="material-icons icon">zoom_in</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="zoomOut()" title="Zoom Out">
+                            <span class="material-icons icon">zoom_out</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="resetZoom()" title="Reset Zoom">
+                            <span class="material-icons icon">fullscreen</span>
+                        </button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="btn btn-icon" id="toggleGridBtn" onclick="toggleGrid()" title="Toggle Grid">
+                            <span class="material-icons icon">grid_on</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="toggleViewBox()" title="Toggle ViewBox">
+                            <span class="material-icons icon">crop_square</span>
+                        </button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="btn btn-icon" onclick="fitToScreen()" title="Fit to Screen">
+                            <span class="material-icons icon">fit_screen</span>
+                        </button>
+                        <button class="btn btn-icon" onclick="centerView()" title="Center View">
+                            <span class="material-icons icon">center_focus_strong</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="preview-container">
+                    <!-- Grid overlay -->
+                    <div class="grid-overlay" id="gridOverlay"></div>
+                    
+                    <!-- ViewBox indicator -->
+                    <div class="viewbox-indicator" id="viewboxIndicator"></div>
+                    
+                    <!-- Selection overlay -->
+                    <div class="selection-overlay" id="selectionOverlay"></div>
+                    
+                    <!-- Selection info -->
+                    <div class="selection-info" id="selectionInfo"></div>
+                    
+                    <!-- SVG Preview -->
+                    <div id="preview"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="status">
+                <span class="status-item" id="lineCount">
+                    <span class="material-icons icon" style="font-size: 14px;">subject</span>
+                    Lines: 1
+                </span>
+                <span class="status-item" id="charCount">
+                    <span class="material-icons icon" style="font-size: 14px;">text_fields</span>
+                    0 chars
+                </span>
+                <span class="status-item" id="zoomLevel">
+                    <span class="material-icons icon" style="font-size: 14px;">zoom_in_map</span>
+                    Zoom: 100%
+                </span>
+            </div>
+            <div class="object-info" id="objectInfo">
+                <span id="selectedObject">No selection</span>
+                <span id="objectPosition"></span>
+                <span id="objectSize"></span>
+            </div>
+            <div class="version">v0.1.0 pre-alpha</div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="btn" onclick="closeSettings()">Close</button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-group">
+                    <h3>Theme</h3>
+                    <div class="theme-option" onclick="setTheme('light')">
+                        <div class="theme-preview light"></div>
+                        <span>Light Theme</span>
+                    </div>
+                    <div class="theme-option" onclick="setTheme('dark')">
+                        <div class="theme-preview dark"></div>
+                        <span>Dark Theme</span>
+                    </div>
+                    <div class="theme-option" onclick="setTheme('monokai')">
+                        <div class="theme-preview monokai"></div>
+                        <span>Monokai Theme</span>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h3>Editor Settings</h3>
+                    <div class="setting-item">
+                        <span>Font Size</span>
+                        <select id="fontSize" onchange="updateFontSize(this.value)">
+                            <option value="12">12px</option>
+                            <option value="13" selected>13px</option>
+                            <option value="14">14px</option>
+                            <option value="15">15px</option>
+                            <option value="16">16px</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Tab Size</span>
+                        <select id="tabSize" onchange="updateTabSize(this.value)">
+                            <option value="2">2 spaces</option>
+                            <option value="4" selected>4 spaces</option>
+                            <option value="8">8 spaces</option>
+                            <option value="tab">Tab character</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Auto Update Preview</span>
+                        <input type="checkbox" id="autoUpdate" checked>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h3>Preview Settings</h3>
+                    <div class="setting-item">
+                        <span>Show Grid</span>
+                        <input type="checkbox" id="showGrid" onchange="toggleGridSetting(this.checked)">
+                    </div>
+                    <div class="setting-item">
+                        <span>Grid Size</span>
+                        <input type="number" id="gridSize" value="20" min="5" max="100" onchange="updateGridSize(this.value)">
+                    </div>
+                    <div class="setting-item">
+                        <span>Show ViewBox</span>
+                        <input type="checkbox" id="showViewBox" onchange="toggleViewBoxSetting(this.checked)">
+                    </div>
+                    <div class="setting-item">
+                        <span>Default Zoom</span>
+                        <select id="defaultZoom">
+                            <option value="100">100%</option>
+                            <option value="75">75%</option>
+                            <option value="50">50%</option>
+                            <option value="200">200%</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h3>Application</h3>
+                    <div class="setting-item">
+                        <span>Auto Save</span>
+                        <input type="checkbox" id="autoSave">
+                    </div>
+                    <div class="setting-item">
+                        <span>Save Interval (seconds)</span>
+                        <input type="number" id="saveInterval" value="30" min="5" max="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        let zoomLevel = 100;
+        let selectedObjectId = null;
+        let svgElements = [];
+        let svgElementData = {};
+        let isGridVisible = false;
+        let isViewBoxVisible = false;
+        let currentTheme = 'light';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+            updateCounters();
+            loadSettings();
+            
+            // Add event listeners
+            const editor = document.getElementById('editor');
+            editor.addEventListener('input', function() {
+                updateCounters();
+                if (document.getElementById('autoUpdate').checked) {
+                    updatePreview();
+                }
+            });
+            
+            editor.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const tabSize = parseInt(localStorage.getItem('svgEditor_tabSize') || '4');
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    
+                    if (localStorage.getItem('svgEditor_tabType') === 'tab') {
+                        this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+                        this.selectionStart = this.selectionEnd = start + 1;
+                    } else {
+                        const spaces = ' '.repeat(tabSize);
+                        this.value = this.value.substring(0, start) + spaces + this.value.substring(end);
+                        this.selectionStart = this.selectionEnd = start + tabSize;
+                    }
+                }
+            });
+            
+            // Click on preview container to clear selection
+            document.querySelector('.preview-container').addEventListener('click', function(e) {
+                if (e.target === this || e.target.id === 'preview') {
+                    clearSelection();
+                }
+            });
+            
+            // Initialize grid and viewbox
+            updateGrid();
+            updateViewBox();
+        });
+
+        function updatePreview() {
+            const editor = document.getElementById('editor');
+            const preview = document.getElementById('preview');
+            
+            try {
+                preview.innerHTML = editor.value;
+                
+                // Extract SVG elements for selection
+                extractSVGElements();
+                updateObjectSelectors();
+                
+                // Add click handlers to SVG elements
+                addElementClickHandlers();
+                
+                // Update UI
+                applyZoom();
+                updateGrid();
+                updateViewBox();
+                clearSelection();
+                
+            } catch (error) {
+                preview.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function extractSVGElements() {
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(document.getElementById('editor').value, 'image/svg+xml');
+            svgElements = [];
+            svgElementData = {};
+            
+            // Extract elements with ids or assign them
+            svgDoc.querySelectorAll('*').forEach((element, index) => {
+                if (element.tagName && element.tagName !== 'svg') {
+                    if (!element.id) {
+                        element.id = `elem_${index}`;
+                    }
+                    
+                    const rect = element.getBoundingClientRect();
+                    svgElements.push({
+                        id: element.id,
+                        tag: element.tagName,
+                        label: `${element.tagName}#${element.id}`
+                    });
+                    
+                    svgElementData[element.id] = {
+                        tag: element.tagName,
+                        position: { x: rect.x, y: rect.y },
+                        size: { width: rect.width, height: rect.height }
+                    };
+                }
+            });
+        }
+
+        function updateObjectSelectors() {
+            const editorSelect = document.getElementById('editorObjectSelect');
+            const previewSelect = document.getElementById('previewObjectSelect');
+            
+            editorSelect.innerHTML = '<option value="">None</option>';
+            previewSelect.innerHTML = '<option value="">None</option>';
+            
+            svgElements.forEach(element => {
+                const option = document.createElement('option');
+                option.value = element.id;
+                option.textContent = element.label;
+                
+                editorSelect.appendChild(option.cloneNode(true));
+                previewSelect.appendChild(option);
+            });
+        }
+
+        function addElementClickHandlers() {
+            const preview = document.getElementById('preview');
+            if (preview.firstChild && preview.firstChild.querySelectorAll) {
+                preview.firstChild.querySelectorAll('*').forEach(element => {
+                    element.style.cursor = 'pointer';
+                    element.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectObject(element.id);
+                        highlightElementInPreview(element);
+                        scrollToElementInEditor(element.id);
+                    });
+                });
+            }
+        }
+
+        function selectObject(objectId) {
+            selectedObjectId = objectId;
+            
+            // Update selectors
+            document.getElementById('editorObjectSelect').value = objectId;
+            document.getElementById('previewObjectSelect').value = objectId;
+            
+            // Update object info in footer
+            updateObjectInfo(objectId);
+            
+            if (objectId) {
+                highlightElementInEditor(objectId);
+                highlightElementInPreview(document.getElementById('preview').querySelector(`#${objectId}`));
+            } else {
+                clearSelection();
+            }
+        }
+
+        function selectObjectInEditor(objectId) {
+            selectObject(objectId);
+            if (objectId) {
+                scrollToElementInEditor(objectId);
+            }
+        }
+
+        function selectObjectInPreview(objectId) {
+            selectObject(objectId);
+        }
+
+        function scrollToElementInEditor(objectId) {
+            const editor = document.getElementById('editor');
+            const code = editor.value;
+            const elementIndex = code.indexOf(`id="${objectId}"`);
+            
+            if (elementIndex !== -1) {
+                // Find the start of the element
+                let start = elementIndex;
+                while (start > 0 && code[start] !== '<') {
+                    start--;
+                }
+                
+                // Find the end of the element
+                const tagName = svgElementData[objectId]?.tag.toLowerCase();
+                const endPattern = `</${tagName}>`;
+                let end = code.indexOf(endPattern, elementIndex);
+                if (end === -1) {
+                    end = code.indexOf('/>', elementIndex);
+                    if (end !== -1) end += 2;
+                } else {
+                    end += endPattern.length;
+                }
+                
+                if (end > start) {
+                    // Highlight the element in editor
+                    editor.focus();
+                    editor.setSelectionRange(start, end);
+                    
+                    // Scroll to the element
+                    const linesBefore = code.substring(0, start).split('\n').length - 1;
+                    const lineHeight = parseInt(getComputedStyle(editor).lineHeight);
+                    editor.scrollTop = linesBefore * lineHeight - 100;
+                }
+            }
+        }
+
+        function highlightElementInPreview(element) {
+            if (!element) return;
+            
+            const overlay = document.getElementById('selectionOverlay');
+            const info = document.getElementById('selectionInfo');
+            const rect = element.getBoundingClientRect();
+            const containerRect = document.querySelector('.preview-container').getBoundingClientRect();
+            
+            // Position overlay
+            overlay.style.left = (rect.left - containerRect.left) + 'px';
+            overlay.style.top = (rect.top - containerRect.top) + 'px';
+            overlay.style.width = rect.width + 'px';
+            overlay.style.height = rect.height + 'px';
+            overlay.classList.add('active');
+            
+            // Update info
+            info.style.left = (rect.right - containerRect.left - 5) + 'px';
+            info.style.top = (rect.top - containerRect.top + 5) + 'px';
+            info.textContent = `${element.tagName} #${element.id}`;
+            info.classList.add('active');
+        }
+
+        function highlightElementInEditor(objectId) {
+            // This would be more complex with a proper code editor
+            // For now, we just update the UI state
+        }
+
+        function updateObjectInfo(objectId) {
+            const objectInfo = document.getElementById('objectInfo');
+            const selectedObject = document.getElementById('selectedObject');
+            const objectPosition = document.getElementById('objectPosition');
+            const objectSize = document.getElementById('objectSize');
+            
+            if (objectId && svgElementData[objectId]) {
+                const data = svgElementData[objectId];
+                selectedObject.textContent = `${data.tag} #${objectId}`;
+                objectPosition.textContent = `x: ${Math.round(data.position.x)}, y: ${Math.round(data.position.y)}`;
+                objectSize.textContent = `${Math.round(data.size.width)}×${Math.round(data.size.height)}`;
+            } else {
+                selectedObject.textContent = 'No selection';
+                objectPosition.textContent = '';
+                objectSize.textContent = '';
+            }
+        }
+
+        function clearSelection() {
+            document.getElementById('selectionOverlay').classList.remove('active');
+            document.getElementById('selectionInfo').classList.remove('active');
+            selectObject(null);
+        }
+
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel + 25, 500);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel - 25, 25);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            zoomLevel = 100;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const preview = document.getElementById('preview');
+            if (preview.firstChild) {
+                preview.firstChild.style.transform = `scale(${zoomLevel / 100})`;
+                preview.firstChild.style.transformOrigin = 'center center';
+                document.getElementById('zoomLevel').textContent = `Zoom: ${zoomLevel}%`;
+            }
+        }
+
+        function updateCounters() {
+            const editor = document.getElementById('editor');
+            const charCount = document.getElementById('charCount');
+            const lineCount = document.getElementById('lineCount');
+            
+            // Character count
+            charCount.textContent = `${editor.value.length} chars`;
+            
+            // Line count
+            const lines = editor.value.split('\n').length;
+            lineCount.textContent = `Lines: ${lines}`;
+        }
+
+        function toggleGrid() {
+            isGridVisible = !isGridVisible;
+            document.getElementById('gridOverlay').classList.toggle('active', isGridVisible);
+            document.getElementById('toggleGridBtn').innerHTML = isGridVisible ? 
+                '<span class="material-icons icon">grid_off</span>' : 
+                '<span class="material-icons icon">grid_on</span>';
+        }
+
+        function toggleGridSetting(visible) {
+            isGridVisible = visible;
+            document.getElementById('gridOverlay').classList.toggle('active', visible);
+            document.getElementById('toggleGridBtn').innerHTML = visible ? 
+                '<span class="material-icons icon">grid_off</span>' : 
+                '<span class="material-icons icon">grid_on</span>';
+        }
+
+        function updateGrid() {
+            const gridSize = parseInt(localStorage.getItem('svgEditor_gridSize') || '20');
+            const gridOverlay = document.getElementById('gridOverlay');
+            gridOverlay.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        }
+
+        function updateGridSize(size) {
+            localStorage.setItem('svgEditor_gridSize', size);
+            updateGrid();
+        }
+
+        function toggleViewBox() {
+            isViewBoxVisible = !isViewBoxVisible;
+            document.getElementById('viewboxIndicator').classList.toggle('active', isViewBoxVisible);
+        }
+
+        function toggleViewBoxSetting(visible) {
+            isViewBoxVisible = visible;
+            document.getElementById('viewboxIndicator').classList.toggle('active', visible);
+        }
+
+        function updateViewBox() {
+            const preview = document.getElementById('preview').firstChild;
+            const indicator = document.getElementById('viewboxIndicator');
+            
+            if (preview && preview.tagName === 'svg') {
+                const viewBox = preview.getAttribute('viewBox');
+                if (viewBox) {
+                    const [x, y, width, height] = viewBox.split(' ').map(Number);
+                    indicator.style.left = '50%';
+                    indicator.style.top = '50%';
+                    indicator.style.width = width + 'px';
+                    indicator.style.height = height + 'px';
+                    indicator.style.marginLeft = -width/2 + 'px';
+                    indicator.style.marginTop = -height/2 + 'px';
+                }
+            }
+        }
+
+        function fitToScreen() {
+            const container = document.querySelector('.preview-container');
+            const preview = document.getElementById('preview').firstChild;
+            
+            if (preview && preview.getBBox) {
+                const bbox = preview.getBBox();
+                const containerWidth = container.clientWidth - 40;
+                const containerHeight = container.clientHeight - 40;
+                
+                const scale = Math.min(
+                    containerWidth / bbox.width,
+                    containerHeight / bbox.height
+                ) * 0.9;
+                
+                zoomLevel = Math.round(scale * 100);
+                applyZoom();
+            }
+        }
+
+        function centerView() {
+            const preview = document.getElementById('preview');
+            if (preview.firstChild) {
+                preview.firstChild.style.transformOrigin = 'center center';
+                preview.scrollLeft = preview.scrollWidth / 2 - preview.clientWidth / 2;
+                preview.scrollTop = preview.scrollHeight / 2 - preview.clientHeight / 2;
+            }
+        }
+
+        function formatCode() {
+            const editor = document.getElementById('editor');
+            const xml = editor.value;
+            
+            try {
+                const formatted = formatXML(xml);
+                editor.value = formatted;
+                updatePreview();
+                updateCounters();
+            } catch (e) {
+                alert('Error formatting code: ' + e.message);
+            }
+        }
+
+        function formatXML(xml) {
+            // Simple XML formatter
+            let formatted = '';
+            let indent = '';
+            const tab = '  ';
+            
+            xml.split(/>\s*</).forEach(function(node) {
+                if (node.match(/^\/\w/)) {
+                    indent = indent.substring(tab.length);
+                }
+                
+                formatted += indent + '<' + node + '>\r\n';
+                
+                if (node.match(/^<?\w[^>]*[^\/]$/)) {
+                    indent += tab;
+                }
+            });
+            
+            return formatted.substring(1, formatted.length - 3);
+        }
+
+        function minifyCode() {
+            const editor = document.getElementById('editor');
+            const minified = editor.value
+                .replace(/\s+/g, ' ')
+                .replace(/>\s+</g, '><')
+                .trim();
+            editor.value = minified;
+            updatePreview();
+            updateCounters();
+        }
+
+        function copyCode() {
+            const editor = document.getElementById('editor');
+            editor.select();
+            document.execCommand('copy');
+            
+            // Show temporary feedback
+            const btn = event.target.closest('.btn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-icons icon">check</span>';
+            setTimeout(() => btn.innerHTML = original, 1000);
+        }
+
+        function clearEditor() {
+            if (confirm('Clear editor content?')) {
+                document.getElementById('editor').value = '';
+                updatePreview();
+                updateCounters();
+            }
+        }
+
+        function loadExample() {
+            document.getElementById('editor').value = `<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <rect id="background" width="300" height="200" fill="#f0f0f0"/>
+  <circle id="circle1" cx="80" cy="100" r="40" fill="#FF6B6B"/>
+  <rect id="rectangle1" x="150" y="60" width="80" height="80" fill="#4ECDC4"/>
+  <polygon id="triangle1" points="260,100 230,160 290,160" fill="#FFD166"/>
+  <text id="text1" x="150" y="180" text-anchor="middle" font-family="Arial" font-size="16">SVG Elements</text>
+</svg>`;
+            updatePreview();
+            updateCounters();
+        }
+
+        function saveSVG() {
+            const svgContent = document.getElementById('editor').value;
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'drawing.svg';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Settings functionality
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+            saveSettings();
+        }
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            document.body.className = theme + '-theme';
+            localStorage.setItem('svgEditor_theme', theme);
+            
+            // Update editor theme
+            const editor = document.getElementById('editor');
+            if (theme === 'light') {
+                editor.style.color = '#333';
+                editor.style.backgroundColor = '#fff';
+            } else if (theme === 'dark') {
+                editor.style.color = '#f0f0f0';
+                editor.style.backgroundColor = '#1e1e1e';
+            } else if (theme === 'monokai') {
+                editor.style.color = '#f8f8f2';
+                editor.style.backgroundColor = '#272822';
+            }
+        }
+
+        function updateFontSize(size) {
+            document.getElementById('editor').style.fontSize = size + 'px';
+            localStorage.setItem('svgEditor_fontSize', size);
+        }
+
+        function updateTabSize(size) {
+            localStorage.setItem('svgEditor_tabSize', size);
+            localStorage.setItem('svgEditor_tabType', size === 'tab' ? 'tab' : 'spaces');
+        }
+
+        function loadSettings() {
+            // Theme
+            const theme = localStorage.getItem('svgEditor_theme') || 'light';
+            setTheme(theme);
+            
+            // Font size
+            const fontSize = localStorage.getItem('svgEditor_fontSize') || '13';
+            document.getElementById('fontSize').value = fontSize;
+            updateFontSize(fontSize);
+            
+            // Tab size
+            const tabSize = localStorage.getItem('svgEditor_tabSize') || '4';
+            document.getElementById('tabSize').value = tabSize;
+            
+            // Auto update
+            const autoUpdate = localStorage.getItem('svgEditor_autoUpdate') !== 'false';
+            document.getElementById('autoUpdate').checked = autoUpdate;
+            
+            // Grid
+            const showGrid = localStorage.getItem('svgEditor_showGrid') === 'true';
+            document.getElementById('showGrid').checked = showGrid;
+            toggleGridSetting(showGrid);
+            
+            // Grid size
+            const gridSize = localStorage.getItem('svgEditor_gridSize') || '20';
+            document.getElementById('gridSize').value = gridSize;
+            updateGridSize(gridSize);
+            
+            // ViewBox
+            const showViewBox = localStorage.getItem('svgEditor_showViewBox') === 'true';
+            document.getElementById('showViewBox').checked = showViewBox;
+            toggleViewBoxSetting(showViewBox);
+            
+            // Default zoom
+            const defaultZoom = localStorage.getItem('svgEditor_defaultZoom') || '100';
+            document.getElementById('defaultZoom').value = defaultZoom;
+            zoomLevel = parseInt(defaultZoom);
+            applyZoom();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('svgEditor_theme', currentTheme);
+            localStorage.setItem('svgEditor_fontSize', document.getElementById('fontSize').value);
+            localStorage.setItem('svgEditor_tabSize', document.getElementById('tabSize').value);
+            localStorage.setItem('svgEditor_autoUpdate', document.getElementById('autoUpdate').checked);
+            localStorage.setItem('svgEditor_showGrid', document.getElementById('showGrid').checked);
+            localStorage.setItem('svgEditor_gridSize', document.getElementById('gridSize').value);
+            localStorage.setItem('svgEditor_showViewBox', document.getElementById('showViewBox').checked);
+            localStorage.setItem('svgEditor_defaultZoom', document.getElementById('defaultZoom').value);
+        }
+    </script>
+</body>
+</html>
