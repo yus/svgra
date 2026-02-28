@@ -371,88 +371,89 @@ const Preview = {
         }
     },
 
-   // Fixed polygon handling
+    // handleMove and handleScale
     handleMove(element, tag, dx, dy) {
+        if (!element) return;
+        
+        // Convert screen movement to SVG coordinates (simplified for now)
+        const scale = this.zoomLevel / 100;
+        const svgDx = dx / scale;
+        const svgDy = dy / scale;
+        
         if (tag === 'circle') {
-            const cx = parseFloat(element.getAttribute('cx') || '0') + dx;
-            const cy = parseFloat(element.getAttribute('cy') || '0') + dy;
-            element.setAttribute('cx', cx);
-            element.setAttribute('cy', cy);
-        } else if (tag === 'rect' || tag === 'text') {
-            const x = parseFloat(element.getAttribute('x') || '0') + dx;
-            const y = parseFloat(element.getAttribute('y') || '0') + dy;
-            element.setAttribute('x', x);
-            element.setAttribute('y', y);
-        } else if (tag === 'polygon' || tag === 'polyline') {
-            // For polygons, parse and transform each point
+            const cx = parseFloat(element.getAttribute('cx') || '50') + svgDx;
+            const cy = parseFloat(element.getAttribute('cy') || '50') + svgDy;
+            element.setAttribute('cx', Math.round(cx * 10) / 10);
+            element.setAttribute('cy', Math.round(cy * 10) / 10);
+        } 
+        else if (tag === 'rect' || tag === 'text') {
+            const x = parseFloat(element.getAttribute('x') || '0') + svgDx;
+            const y = parseFloat(element.getAttribute('y') || '0') + svgDy;
+            element.setAttribute('x', Math.round(x * 10) / 10);
+            element.setAttribute('y', Math.round(y * 10) / 10);
+        } 
+        else if (tag === 'polygon' || tag === 'polyline') {
             const pointsAttr = element.getAttribute('points');
             if (pointsAttr) {
                 const points = pointsAttr.trim().split(/\s+/).map(p => {
-                    const coords = p.split(',').map(parseFloat);
-                    return { x: coords[0] + dx, y: coords[1] + dy };
+                    const [px, py] = p.split(',').map(parseFloat);
+                    return `${Math.round((px + svgDx) * 10) / 10},${Math.round((py + svgDy) * 10) / 10}`;
                 });
-                
-                const newPoints = points.map(p => `${p.x},${p.y}`).join(' ');
-                element.setAttribute('points', newPoints);
+                element.setAttribute('points', points.join(' '));
             }
         }
     },
-
+    
     handleScale(element, tag, dx, dy, handleType = 'scale') {
         if (!element) return;
         
-        // Ensure handleType is defined
         const type = handleType || 'scale';
+        const scale = this.zoomLevel / 100;
+        const svgDx = dx / scale;
+        const svgDy = dy / scale;
         
-        // Check if element has getBBox method (SVG elements do, but safety first)
-        if (typeof element.getBBox !== 'function') {
-            console.warn('Element does not support getBBox');
-            return;
+        // Safe bbox retrieval
+        let bbox;
+        try {
+            bbox = element.getBBox();
+        } catch (e) {
+            bbox = { x: 0, y: 0, width: 100, height: 100 };
         }
         
-        const bbox = element.getBBox();
-        
         if (tag === 'circle') {
-            const cx = parseFloat(element.getAttribute('cx') || bbox.x + bbox.width/2);
-            const cy = parseFloat(element.getAttribute('cy') || bbox.y + bbox.height/2);
-            const r = parseFloat(element.getAttribute('r') || bbox.width/2);
-            
-            // Calculate scale based on handle position with safety
-            let scale = 1;
+            const r = parseFloat(element.getAttribute('r') || '40');
+            // Scale factor based on handle type
+            let scaleFactor = 1;
             if (type.includes('scale-x')) {
-                scale = 1 + dx / 100;
+                scaleFactor = 1 + svgDx / 50;
             } else if (type.includes('scale-y')) {
-                scale = 1 + dy / 100;
+                scaleFactor = 1 + svgDy / 50;
             } else {
-                scale = 1 + (dx + dy) / 200;
+                scaleFactor = 1 + (svgDx + svgDy) / 100;
             }
-            
-            // Ensure minimum size and valid number
-            const newR = Math.max(5, Math.abs(r * scale));
-            if (!isNaN(newR) && isFinite(newR)) {
-                element.setAttribute('r', newR);
-            }
-            
-        } else if (tag === 'rect' || tag === 'text') {
-            // Get current values with fallbacks
-            const x = parseFloat(element.getAttribute('x') || bbox.x);
-            const y = parseFloat(element.getAttribute('y') || bbox.y);
+            const newR = Math.max(5, Math.abs(r * scaleFactor));
+            element.setAttribute('r', Math.round(newR * 10) / 10);
+        } 
+        else if (tag === 'rect') {
+            // Rectangles can scale non-uniformly
             const width = parseFloat(element.getAttribute('width') || bbox.width);
             const height = parseFloat(element.getAttribute('height') || bbox.height);
             
-            // Apply scaling based on handle type
             if (type.includes('scale-x') || type === 'scale') {
-                const newWidth = Math.max(5, Math.abs(width * (1 + dx / 100)));
-                if (!isNaN(newWidth) && isFinite(newWidth)) {
-                    element.setAttribute('width', newWidth);
-                }
+                const newWidth = Math.max(5, Math.abs(width * (1 + svgDx / 50)));
+                element.setAttribute('width', Math.round(newWidth * 10) / 10);
             }
             if (type.includes('scale-y') || type === 'scale') {
-                const newHeight = Math.max(5, Math.abs(height * (1 + dy / 100)));
-                if (!isNaN(newHeight) && isFinite(newHeight)) {
-                    element.setAttribute('height', newHeight);
-                }
+                const newHeight = Math.max(5, Math.abs(height * (1 + svgDy / 50)));
+                element.setAttribute('height', Math.round(newHeight * 10) / 10);
             }
+        }
+        else if (tag === 'text') {
+            // Text scales uniformly
+            const fontSize = parseFloat(element.getAttribute('font-size') || '16');
+            const scaleFactor = 1 + (svgDx + svgDy) / 100;
+            const newSize = Math.max(8, Math.abs(fontSize * scaleFactor));
+            element.setAttribute('font-size', Math.round(newSize) + 'px');
         }
     },
 
