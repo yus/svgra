@@ -357,3 +357,225 @@
     width: 24px;
     height: 24px;
 }
+
+/* Add to existing components.css */
+
+/* Tools Panel - Vertical Layout */
+.tools-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+    min-width: 60px;
+    width: 60px;
+}
+
+.tool-btn {
+    width: 44px;
+    height: 44px;
+    padding: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.tool-btn.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.tool-btn i {
+    width: 20px;
+    height: 20px;
+}
+
+.tool-btn .tool-label {
+    display: none;
+}
+
+/* Tooltips */
+.tool-btn:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    font-size: 12px;
+    margin-left: 8px;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Preview Panel Layout */
+.preview-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.preview-panel .panel-header {
+    flex-shrink: 0;
+}
+
+.preview-content {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.tools-sidebar {
+    width: 60px;
+    background: var(--toolbar-bg);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.workspace-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.workspace-toolbar {
+    display: flex;
+    padding: 4px;
+    gap: 4px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.workspace-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    padding: 20px;
+    overflow: auto;
+    position: relative;
+}
+
+/* Tool Popups */
+.tool-popup {
+    position: absolute;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    min-width: 200px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tool-popup-header {
+    padding: 8px 12px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tool-popup-body {
+    padding: 12px;
+}
+
+.tool-popup-footer {
+    padding: 8px 12px;
+    background: var(--toolbar-bg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Form controls in popups */
+.tool-popup input[type="number"],
+.tool-popup input[type="text"],
+.tool-popup select {
+    width: 100%;
+    padding: 4px 8px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.tool-popup label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Color input */
+.tool-popup input[type="color"] {
+    width: 100%;
+    height: 30px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+/* Element highlighting */
+.element-highlight {
+    outline: 2px solid var(--primary-color) !important;
+    outline-offset: 2px !important;
+    transition: outline 0.2s ease;
+}
+
+.element-highlight.hover {
+    outline: 2px dashed var(--primary-color) !important;
+}
+
+/* Transform handles */
+.transform-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    z-index: 100;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.transform-handle:hover {
+    background: var(--primary-color);
+}
+
+/* Version footer */
+.version {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+}
