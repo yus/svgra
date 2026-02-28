@@ -196,6 +196,13 @@ const Preview = {
         this.removeTransformHandles();
     },
 
+    clearSelection() {
+        this.selectedId = null;
+        this.hideSelectionAnts();
+        this.updateFooterInfo(null);
+        this.removeTransformHandles();
+    },
+
     addTransformHandles(element) {
         this.removeTransformHandles();
         
