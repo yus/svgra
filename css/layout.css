@@ -114,6 +114,63 @@
     flex-shrink: 0;
 }
 
+/* No min-width: 100px! That was a funny desktop thinking 😄 */
+.tool-btn i {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+/* Tooltips - now properly positioned from the compact button */
+.tool-btn:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    font-size: 12px;
+    margin-left: 8px;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+/* Light theme - black icons */
+.light-theme .tool-btn i {
+    color: #333333;
+    stroke: #333333;
+}
+
+.light-theme .tool-btn.active i {
+    color: var(--primary-color);
+    stroke: var(--primary-color);
+}
+
+/* Dark theme - white icons */
+.dark-theme .tool-btn i,
+.monokai-theme .tool-btn i {
+    color: #ffffff;
+    stroke: #ffffff;
+}
+
+.dark-theme .tool-btn.active i,
+.monokai-theme .tool-btn.active i {
+    color: var(--primary-color);
+    stroke: var(--primary-color);
+}
+
+/* Active state */
+.tool-btn.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
 /* Square Workspace Area */
 .workspace-area.square {
     aspect-ratio: 1 / 1;
