@@ -60,7 +60,10 @@
 
 /* Tool buttons in tools panel */
 .tool-btn {
-    padding: 8px 12px;
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+    margin-bottom: 4px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     cursor: pointer;
@@ -81,9 +84,21 @@
     color: var(--primary-color);
 }
 
+.tools-sidebar {
+    max-width: 36px;
+    min-width: 36px;
+    padding: 4px;
+    background: var(--toolbar-bg);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .tool-btn i {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Grid overlay */
@@ -765,6 +780,33 @@
     gap: 16px;
 }
 
+/* Pane header */
+.pane-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Close button */
+#closePreferencePane.btn-icon {
+    padding: 0px;
+    max-width: 24px;
+    max-height: 20px;
+    background-color: #2d2d2d;
+    border: 1px solid var(--border-color);
+    min-width: 24px;
+    min-height: 20px;
+}
+
+#closePreferencePane.btn-icon i {
+    width: 14px;
+    height: 14px;
+}
+
 /* Editor focus highlight */
 .editor-focus-highlight {
     background: var(--primary-light);
@@ -921,6 +963,48 @@
     min-width: 30px;
 }
 
+/* Property groups */
+.property-group {
+    display: flex;
+    gap: 16px;
+    flex-direction: column;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+}
+
+/* Labels and inputs */
+.property-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 8px;
+    margin-right: 0px;
+    padding-right: 2px;
+    max-width: 100%;
+}
+
+.property-group label span {
+    /* Remove min-width */
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.property-group input[type="text"],
+.property-group input[type="number"],
+.property-group select {
+    flex: 1;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 11px;
+    max-width: 100px;
+    padding-top: 4px;
+}
+
 /* Snapping options */
 .snap-options {
     display: flex;
@@ -960,3 +1044,10 @@
     opacity: 0.7;
 }
 
+/* Hide Gemini assistant if present */
+.gemini-assistant,
+.assistant-knob,
+[class*="gemini"],
+[class*="assistant"] {
+    display: none !important;
+}
