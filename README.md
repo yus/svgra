@@ -3,7 +3,7 @@
 **SVGRA** is a lightweight, browser-based SVG editor that works entirely offline using native browser APIs. No dependencies, no frameworks—just pure JavaScript and the browser's built-in SVG capabilities.
 
 <div align="center">
-  <img src="assets/logo.svg" alt="logo" width="400">
+  <img src="assets/svgra.svg" alt="logo" width="400">
 </div>  
 
 
