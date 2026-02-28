@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>SVGRA Editor</title>
+    <title>SVG RA Editor</title>
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/main.css">
@@ -16,13 +16,12 @@
         <!-- Header -->
         <header class="header">
             <div class="logo-container">
-                <!-- Your logo with Deep Atlantic Blue -->
+                <!-- Logo without Tt -->
                 <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <rect x="10" y="10" width="80" height="80" fill="var(--primary-color, #2d4c6c)" rx="8" ry="8" />
                     <circle cx="50" cy="50" r="30" fill="white" />
-                    <text x="50" y="65" text-anchor="middle" font-family="Arial" font-size="24" fill="var(--primary-color, #2d4c6c)" font-weight="bold">Tt</text>
                 </svg>
-                <span class="app-title">SVGRA Editor</span>
+                <span class="app-title">SVG RA Editor</span>
             </div>
             
             <div class="header-controls" id="headerControls">
@@ -49,31 +48,50 @@
             </div>
         </header>
 
-        <!-- Main Content -->
+        <!-- Main Content - New Grid Layout -->
         <main class="main-content" id="mainContent">
-            <!-- Editor Panel -->
-            <section class="editor-panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">
-                        <i data-lucide="code-2" class="icon"></i>
-                        SVG Editor
-                    </h2>
-                    <div class="status-badge" id="lineCount">
-                        <i data-lucide="edit-3" class="icon-sm"></i>
-                        <span>Lines: 1</span>
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- SVG Editor Panel -->
+                <section class="editor-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <i data-lucide="code-2" class="icon"></i>
+                            SVG Editor
+                        </h2>
+                        <div class="status-badge" id="lineCount">
+                            <i data-lucide="edit-3" class="icon-sm"></i>
+                            <span>Lines: 1</span>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Editor Tool Palette -->
-                <div class="tool-palette" id="editorToolPalette"></div>
-                
-                <div class="editor-container">
-                    <textarea id="editor" placeholder="Enter your SVG code here..." spellcheck="false"></textarea>
-                </div>
-            </section>
+                    
+                    <!-- Editor Tool Palette -->
+                    <div class="tool-palette" id="editorToolPalette"></div>
+                    
+                    <div class="editor-container">
+                        <textarea id="editor" placeholder="Enter your SVG code here..." spellcheck="false"></textarea>
+                    </div>
+                </section>
 
-            <!-- Preview Panel -->
-            <section class="preview-panel">
+                <!-- Preference Pane -->
+                <section class="preference-pane" id="preferencePane">
+                    <div class="pane-header">
+                        <div class="pane-title">
+                            <i data-lucide="settings-2" class="icon"></i>
+                            <span id="paneTitle">No selection</span>
+                        </div>
+                        <button class="btn-icon" id="closePreferencePane" onclick="Tools.hidePreferencePane()">
+                            <i data-lucide="chevron-down" class="icon"></i>
+                        </button>
+                    </div>
+                    <div class="pane-content" id="paneContent">
+                        <!-- Dynamic content loaded by Tools -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column - Workspace -->
+            <section class="workspace-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
                         <i data-lucide="eye" class="icon"></i>
@@ -85,28 +103,25 @@
                     </div>
                 </div>
                 
-                <div class="preview-content">
+                <div class="workspace-content">
                     <!-- Vertical Tools Sidebar -->
                     <div class="tools-sidebar" id="toolsPanel"></div>
                     
                     <!-- Workspace Area -->
                     <div class="workspace-container">
-                        <!-- Workspace Toolbar (Zoom/Grid) -->
+                        <!-- Workspace Toolbar -->
                         <div class="workspace-toolbar" id="workspaceToolbar"></div>
                         
-                        <!-- Workspace Area -->
-                        <div class="workspace-area" id="previewContainer">
+                        <!-- Square Workspace Area -->
+                        <div class="workspace-area square" id="previewContainer">
                             <!-- Grid overlay -->
                             <div class="grid-overlay" id="gridOverlay"></div>
                             
                             <!-- ViewBox indicator -->
                             <div class="viewbox-indicator" id="viewboxIndicator"></div>
                             
-                            <!-- Selection overlay -->
-                            <div class="selection-overlay" id="selectionOverlay"></div>
-                            
-                            <!-- Selection info -->
-                            <div class="selection-info" id="selectionInfo"></div>
+                            <!-- Selection ants -->
+                            <div class="selection-ants" id="selectionAnts"></div>
                             
                             <!-- SVG Preview -->
                             <div id="preview"></div>
@@ -135,13 +150,10 @@
             </div>
             <div class="version">
                 <i data-lucide="code" class="icon-sm"></i>
-                v0.4.0.1 pre-alpha
+                v0.5.0 pre-alpha
             </div>
         </footer>
     </div>
-
-    <!-- Quick Actions (mobile) -->
-    <div class="quick-actions" id="quickActions"></div>
 
     <!-- Settings Modal -->
     <div class="settings-modal" id="settingsModal">
