@@ -579,3 +579,196 @@
     color: var(--text-tertiary);
     font-size: 11px;
 }
+
+/* Add to existing components.css */
+
+/* Tools Panel - Compact 48px width */
+.tools-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    background: var(--toolbar-bg);
+    border-right: 1px solid var(--border-color);
+    width: 48px;
+    min-width: 48px;
+    overflow-y: auto;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 0 auto;
+}
+
+.tool-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+.tool-btn.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.tool-btn i {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+/* Light theme - black icons */
+.light-theme .tool-btn i {
+    color: #333333;
+    stroke: #333333;
+}
+
+.light-theme .tool-btn.active i {
+    color: var(--primary-color);
+    stroke: var(--primary-color);
+}
+
+/* Dark theme - white icons */
+.dark-theme .tool-btn i,
+.monokai-theme .tool-btn i {
+    color: #ffffff;
+    stroke: #ffffff;
+}
+
+.dark-theme .tool-btn.active i,
+.monokai-theme .tool-btn.active i {
+    color: var(--primary-color);
+    stroke: var(--primary-color);
+}
+
+/* Tooltips */
+.tool-btn:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    font-size: 12px;
+    margin-left: 8px;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+/* Workspace Toolbar - Compact */
+.workspace-toolbar {
+    display: flex;
+    padding: 4px;
+    gap: 2px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    min-height: 40px;
+}
+
+.workspace-toolbar .tool-group {
+    padding: 2px;
+    gap: 1px;
+}
+
+.workspace-toolbar .btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+}
+
+/* Selection ants - dashed border animation */
+@keyframes marching-ants {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 8; }
+}
+
+.selection-ants {
+    position: absolute;
+    pointer-events: none;
+    border: 2px dashed var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    z-index: 15;
+    animation: marching-ants 0.5s linear infinite;
+}
+
+.selection-ants::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+}
+
+/* Element hover effect */
+.element-hover {
+    outline: 2px dashed var(--primary-color) !important;
+    outline-offset: 2px !important;
+    opacity: 0.9;
+    transition: all 0.1s ease;
+    cursor: pointer;
+}
+
+/* Tool Preference Pane */
+.tool-preference-pane {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 500;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.tool-preference-pane.active {
+    transform: translateY(0);
+}
+
+.tool-preference-pane .pane-header {
+    padding: 12px 16px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tool-preference-pane .pane-content {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* Editor focus highlight */
+.editor-focus-highlight {
+    background: var(--primary-light);
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.2s ease;
+}
