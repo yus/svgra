@@ -56,15 +56,25 @@ const Utils = {
     },
 
     getElementPosition(element, container) {
-        const rect = element.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
+        if (!element || !container) {
+            console.warn('getElementPosition: element or container is null');
+            return { left: 0, top: 0, width: 0, height: 0 };
+        }
         
-        return {
-            left: rect.left - containerRect.left + container.scrollLeft,
-            top: rect.top - containerRect.top + container.scrollTop,
-            width: rect.width,
-            height: rect.height
-        };
+        try {
+            const rect = element.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            return {
+                left: rect.left - containerRect.left + container.scrollLeft,
+                top: rect.top - containerRect.top + container.scrollTop,
+                width: rect.width,
+                height: rect.height
+            };
+        } catch (error) {
+            console.error('Error getting element position:', error);
+            return { left: 0, top: 0, width: 0, height: 0 };
+        }
     },
 
     parseSVG(svgString) {
@@ -99,11 +109,51 @@ const Utils = {
     },
 
     getViewBox(svgElement) {
+        if (!svgElement) return null;
         const viewBox = svgElement.getAttribute('viewBox');
         if (viewBox) {
             const [x, y, width, height] = viewBox.split(' ').map(Number);
             return { x, y, width, height };
         }
         return null;
+    },
+
+    // New: Find SVG element from click target
+    findSVGElement(target, previewContainer) {
+        if (!target || !previewContainer) return null;
+        
+        while (target && target !== previewContainer && target !== document.body) {
+            // Check if it's an SVG element (has tagName and is not the container)
+            if (target.tagName && target.id && target !== previewContainer.querySelector('#preview')?.firstChild) {
+                // Make sure it's an actual SVG element, not UI overlay
+                const isUIElement = target.classList.contains('grid-overlay') ||
+                                   target.classList.contains('viewbox-indicator') ||
+                                   target.classList.contains('selection-overlay') ||
+                                   target.classList.contains('selection-info') ||
+                                   target.classList.contains('tool-popup');
+                
+                if (!isUIElement) {
+                    return target;
+                }
+            }
+            target = target.parentElement;
+        }
+        return null;
+    },
+
+    // New: Get element path in SVG
+    getElementPath(element) {
+        if (!element) return [];
+        const path = [];
+        let current = element;
+        while (current && current.tagName && current !== document.body) {
+            path.unshift({
+                tag: current.tagName,
+                id: current.id,
+                class: current.className
+            });
+            current = current.parentElement;
+        }
+        return path;
     }
 };
