@@ -256,80 +256,90 @@ const Tools = {
 
     renderSelectPane(content) {
         const element = this.activeElement;
-        const tag = element.tagName;
-        const id = element.id;
-        const classes = element.getAttribute('class') || '';
         const fill = element.getAttribute('fill') || '#000000';
         const stroke = element.getAttribute('stroke') || 'none';
         
         content.innerHTML = `
             <div class="property-group">
                 <h4>Element Properties</h4>
-                <label>
-                    <span>Tag:</span>
-                    <input type="text" value="${tag}" id="elemTag" onchange="Tools.updateElementAttribute('tag', this.value)">
-                </label>
-                <label>
-                    <span>ID:</span>
-                    <input type="text" value="${id}" id="elemId" onchange="Tools.updateElementAttribute('id', this.value)">
-                </label>
-                <label>
-                    <span>Class:</span>
-                    <input type="text" value="${classes}" id="elemClass" onchange="Tools.updateElementAttribute('class', this.value)">
-                </label>
+                <label><span>Tag:</span> <input type="text" value="${element.tagName}" readonly></label>
+                <label><span>ID:</span> <input type="text" value="${element.id}" onchange="Tools.updateElementAttribute('id', this.value)"></label>
+                <label><span>Class:</span> <input type="text" value="${element.getAttribute('class') || ''}" onchange="Tools.updateElementAttribute('class', this.value)"></label>
             </div>
             <div class="property-group">
                 <h4>Colors</h4>
-                <label>
-                    <span>Fill:</span>
-                    <input type="color" value="${fill}" id="elemFill" onchange="Tools.updateElementAttribute('fill', this.value)">
-                    <span class="color-hex">${fill}</span>
-                </label>
-                <label>
-                    <span>Stroke:</span>
-                    <input type="color" value="${stroke === 'none' ? '#000000' : stroke}" id="elemStroke" onchange="Tools.updateElementAttribute('stroke', this.value)">
-                    <span class="color-hex">${stroke}</span>
-                </label>
+                <div style="display: flex; gap: 16px;">
+                    <label style="flex: 1;">
+                        <span>Fill:</span>
+                        <input type="color" value="${fill}" onchange="Tools.updateElementAttribute('fill', this.value)">
+                        <span class="color-hex">${fill}</span>
+                    </label>
+                    <label style="flex: 1;">
+                        <span>Stroke:</span>
+                        <input type="color" value="${stroke === 'none' ? '#000000' : stroke}" onchange="Tools.updateElementAttribute('stroke', this.value)">
+                        <span class="color-hex">${stroke}</span>
+                    </label>
+                </div>
             </div>
         `;
     },
 
     renderTransformPane(content) {
         const element = this.activeElement;
-        const bbox = element.getBBox ? element.getBBox() : { x: 0, y: 0, width: 100, height: 100 };
+        const bbox = element.getBBox();
         
         content.innerHTML = `
             <div class="property-group">
                 <h4>Position</h4>
-                <label>
-                    <span>X:</span>
-                    <input type="number" id="transformX" value="${Math.round(bbox.x)}" step="1" onchange="Tools.applyTransform()" oninput="Tools.previewTransform()">
-                </label>
-                <label>
-                    <span>Y:</span>
-                    <input type="number" id="transformY" value="${Math.round(bbox.y)}" step="1" onchange="Tools.applyTransform()" oninput="Tools.previewTransform()">
-                </label>
+                <div style="display: flex; gap: 16px;">
+                    <label style="flex: 1;">
+                        <span>X:</span>
+                        <input type="number" id="transformX" value="${Math.round(bbox.x)}" step="1" onchange="Tools.applyTransform()">
+                    </label>
+                    <label style="flex: 1;">
+                        <span>Y:</span>
+                        <input type="number" id="transformY" value="${Math.round(bbox.y)}" step="1" onchange="Tools.applyTransform()">
+                    </label>
+                </div>
             </div>
             <div class="property-group">
                 <h4>Size</h4>
-                <label>
-                    <span>Width:</span>
-                    <input type="number" id="transformWidth" value="${Math.round(bbox.width)}" step="1" min="1" onchange="Tools.applyTransform()" oninput="Tools.previewTransform()">
-                </label>
-                <label>
-                    <span>Height:</span>
-                    <input type="number" id="transformHeight" value="${Math.round(bbox.height)}" step="1" min="1" onchange="Tools.applyTransform()" oninput="Tools.previewTransform()">
-                </label>
+                <div style="display: flex; gap: 16px;">
+                    <label style="flex: 1;">
+                        <span>W:</span>
+                        <input type="number" id="transformWidth" value="${Math.round(bbox.width)}" step="1" min="1" onchange="Tools.applyTransform()">
+                    </label>
+                    <label style="flex: 1;">
+                        <span>H:</span>
+                        <input type="number" id="transformHeight" value="${Math.round(bbox.height)}" step="1" min="1" onchange="Tools.applyTransform()">
+                    </label>
+                </div>
             </div>
             <div class="property-group">
                 <h4>Rotation</h4>
-                <label>
-                    <span>Angle:</span>
-                    <input type="range" id="transformRotate" value="0" min="0" max="360" step="15" onchange="Tools.applyTransform()" oninput="Tools.previewTransform(); document.getElementById('transformRotateValue').value = this.value">
-                    <input type="number" id="transformRotateValue" value="0" min="0" max="360" step="15" onchange="Tools.applyTransform(); document.getElementById('transformRotate').value = this.value" style="width: 60px; margin-left: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="range" id="transformRotate" value="0" min="0" max="360" step="15" style="flex: 1;" onchange="Tools.applyTransform()">
+                    <input type="number" id="transformRotateValue" value="0" min="0" max="360" step="15" style="width: 60px;" onchange="Tools.applyTransform()">
+                </div>
+                <label style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="snapToGrid" checked>
+                    <span>Snap to 15° increments</span>
                 </label>
             </div>
         `;
+        
+        // Sync range and number
+        const range = document.getElementById('transformRotate');
+        const number = document.getElementById('transformRotateValue');
+        if (range && number) {
+            range.addEventListener('input', () => {
+                number.value = range.value;
+                if (document.getElementById('snapToGrid').checked) {
+                    // Already snapped via step="15"
+                }
+            });
+            number.addEventListener('input', () => range.value = number.value);
+        }
     },
 
     renderShapePane(content) {
