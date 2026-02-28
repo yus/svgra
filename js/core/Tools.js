@@ -286,7 +286,28 @@ const Tools = {
 
     renderTransformPane(content) {
         const element = this.activeElement;
-        const bbox = element.getBBox();
+        if (!element) return;
+        
+        // Safely get bounding box
+        let bbox = { x: 0, y: 0, width: 100, height: 100 };
+        try {
+            if (typeof element.getBBox === 'function') {
+                bbox = element.getBBox();
+            } else {
+                // For elements without getBBox, try to get from attributes
+                const tag = element.tagName.toLowerCase();
+                if (tag === 'text') {
+                    // Text elements might need special handling
+                    bbox.x = parseFloat(element.getAttribute('x') || 0);
+                    bbox.y = parseFloat(element.getAttribute('y') || 0);
+                    // Estimate text size
+                    bbox.width = element.textContent?.length * 8 || 100;
+                    bbox.height = parseFloat(element.getAttribute('font-size') || 16);
+                }
+            }
+        } catch (e) {
+            console.warn('Could not get bbox:', e);
+        }
         
         content.innerHTML = `
             <div class="property-group">
@@ -321,10 +342,16 @@ const Tools = {
                     <input type="range" id="transformRotate" value="0" min="0" max="360" step="15" style="flex: 1;" onchange="Tools.applyTransform()">
                     <input type="number" id="transformRotateValue" value="0" min="0" max="360" step="15" style="width: 60px;" onchange="Tools.applyTransform()">
                 </div>
-                <label style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="snapToGrid" checked>
-                    <span>Snap to 15° increments</span>
-                </label>
+                <div class="snap-options">
+                    <label>
+                        <input type="checkbox" id="snapToGrid" checked>
+                        <span>Snap to 15°</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="snapToPixel" checked>
+                        <span>Snap to 1px</span>
+                    </label>
+                </div>
             </div>
         `;
         
@@ -334,9 +361,6 @@ const Tools = {
         if (range && number) {
             range.addEventListener('input', () => {
                 number.value = range.value;
-                if (document.getElementById('snapToGrid').checked) {
-                    // Already snapped via step="15"
-                }
             });
             number.addEventListener('input', () => range.value = number.value);
         }
@@ -511,11 +535,44 @@ const Tools = {
 
     applyTransform() {
         if (!this.activeElement) return;
-        this.previewTransform();
+        
+        const snapToPixel = document.getElementById('snapToPixel')?.checked;
+        
+        let x = parseFloat(document.getElementById('transformX')?.value);
+        let y = parseFloat(document.getElementById('transformY')?.value);
+        let width = parseFloat(document.getElementById('transformWidth')?.value);
+        let height = parseFloat(document.getElementById('transformHeight')?.value);
+        let rotate = parseFloat(document.getElementById('transformRotate')?.value);
+        
+        // Apply snapping
+        if (snapToPixel) {
+            x = Math.round(x);
+            y = Math.round(y);
+            width = Math.round(width);
+            height = Math.round(height);
+        }
+        
+        const tag = this.activeElement.tagName.toLowerCase();
+        
+        if (tag === 'circle') {
+            if (!isNaN(x)) this.activeElement.setAttribute('cx', x);
+            if (!isNaN(y)) this.activeElement.setAttribute('cy', y);
+            if (!isNaN(width)) this.activeElement.setAttribute('r', width/2);
+        } else {
+            if (!isNaN(x)) this.activeElement.setAttribute('x', x);
+            if (!isNaN(y)) this.activeElement.setAttribute('y', y);
+            if (!isNaN(width)) this.activeElement.setAttribute('width', width);
+            if (!isNaN(height)) this.activeElement.setAttribute('height', height);
+        }
+        
+        if (!isNaN(rotate) && rotate !== 0) {
+            const bbox = this.activeElement.getBBox();
+            this.activeElement.setAttribute('transform', 
+                `rotate(${rotate} ${bbox.x + bbox.width/2} ${bbox.y + bbox.height/2})`);
+        }
+        
         this.updateEditor();
         Toast.success('Transform applied');
-        
-        // Return focus to editor
         document.getElementById('editor').focus();
     },
 
