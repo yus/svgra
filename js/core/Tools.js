@@ -1,4 +1,4 @@
-// Tools.js
+// Tools.js with focus management
 
 const Tools = {
     currentTool: 'select',
@@ -38,24 +38,14 @@ const Tools = {
         }
     ],
 
-    workspaceTools: [
-        { id: 'zoomInBtn', icon: 'zoom-in', title: 'Zoom In (Ctrl++)' },
-        { id: 'zoomOutBtn', icon: 'zoom-out', title: 'Zoom Out (Ctrl+-)' },
-        { id: 'resetZoomBtn', icon: 'maximize-2', title: 'Reset Zoom' },
-        null,
-        { id: 'toggleGridBtn', icon: 'grid', title: 'Toggle Grid' },
-        { id: 'toggleViewBoxBtn', icon: 'frame', title: 'Toggle ViewBox' },
-        null,
-        { id: 'fitToScreenBtn', icon: 'crop', title: 'Fit to Screen' },
-        { id: 'centerViewBtn', icon: 'move', title: 'Center View' }
-    ],
-
     init() {
         this.renderTools();
-        this.renderWorkspaceToolbar();
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
         this.hidePreferencePane();
+        
+        // Set initial tool
+        this.setActive('selectTool');
     },
 
     renderTools() {
@@ -74,87 +64,15 @@ const Tools = {
                 e.preventDefault();
                 e.stopPropagation();
                 this.setActive(tool.id);
+                
+                // Return focus to SVG Editor
+                document.getElementById('editor').focus();
             });
             
             this.toolsPanel.appendChild(button);
         });
         
         if (window.lucide) lucide.createIcons();
-        this.setActive('selectTool');
-    },
-
-    renderWorkspaceToolbar() {
-        const toolbar = document.getElementById('workspaceToolbar');
-        if (!toolbar) return;
-        
-        toolbar.innerHTML = '';
-        let currentGroup = [];
-        
-        this.workspaceTools.forEach(tool => {
-            if (tool === null) {
-                if (currentGroup.length > 0) {
-                    toolbar.appendChild(this.createToolGroup(currentGroup));
-                    currentGroup = [];
-                }
-                toolbar.appendChild(this.createSeparator());
-            } else {
-                const button = this.createToolButton(tool);
-                currentGroup.push(button);
-            }
-        });
-        
-        if (currentGroup.length > 0) {
-            toolbar.appendChild(this.createToolGroup(currentGroup));
-        }
-        
-        if (window.lucide) lucide.createIcons();
-    },
-
-    createToolButton(tool) {
-        const button = document.createElement('button');
-        button.id = tool.id;
-        button.className = 'btn btn-icon';
-        button.title = tool.title;
-        button.innerHTML = `<i data-lucide="${tool.icon}" class="icon"></i>`;
-        
-        switch(tool.id) {
-            case 'zoomInBtn':
-                button.addEventListener('click', () => Preview.zoomIn());
-                break;
-            case 'zoomOutBtn':
-                button.addEventListener('click', () => Preview.zoomOut());
-                break;
-            case 'resetZoomBtn':
-                button.addEventListener('click', () => Preview.resetZoom());
-                break;
-            case 'toggleGridBtn':
-                button.addEventListener('click', () => App.toggleGrid());
-                break;
-            case 'toggleViewBoxBtn':
-                button.addEventListener('click', () => App.toggleViewBox());
-                break;
-            case 'fitToScreenBtn':
-                button.addEventListener('click', () => Preview.fitToScreen());
-                break;
-            case 'centerViewBtn':
-                button.addEventListener('click', () => Preview.centerView());
-                break;
-        }
-        
-        return button;
-    },
-
-    createToolGroup(buttons) {
-        const group = document.createElement('div');
-        group.className = 'tool-group';
-        buttons.forEach(btn => group.appendChild(btn));
-        return group;
-    },
-
-    createSeparator() {
-        const sep = document.createElement('div');
-        sep.className = 'tool-separator';
-        return sep;
     },
 
     setupEventListeners() {
@@ -166,11 +84,6 @@ const Tools = {
             const element = Utils.findSVGElement(e.target, previewContainer);
             if (element && element.id && element !== this.activeElement) {
                 element.classList.add('element-hover');
-                
-                // Transform tool cursor
-                if (this.currentTool === 'transformTool') {
-                    element.style.cursor = 'move';
-                }
             }
         });
 
@@ -178,7 +91,6 @@ const Tools = {
             const element = Utils.findSVGElement(e.target, previewContainer);
             if (element) {
                 element.classList.remove('element-hover');
-                element.style.cursor = '';
             }
         });
 
@@ -197,17 +109,38 @@ const Tools = {
             }
         });
 
-        // Editor change sync
-        document.getElementById('editor').addEventListener('input', () => {
-            if (!this.isUpdating && this.activeElement) {
-                // Could sync from editor to preview if needed
+        // Editor focus management
+        const editor = document.getElementById('editor');
+        editor.addEventListener('focus', () => {
+            // Could highlight corresponding element in preview
+        });
+
+        editor.addEventListener('blur', () => {
+            // Keep selection but remove focus highlight
+        });
+
+        // Preference pane input focus
+        document.addEventListener('focusin', (e) => {
+            if (e.target.closest('.preference-pane')) {
+                // Input in preference pane - update editor silently
             }
         });
     },
 
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // Don't intercept if typing in editor or inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                // Allow normal typing, but still handle tool shortcuts with Ctrl
+                if (e.ctrlKey) {
+                    switch(e.key.toLowerCase()) {
+                        case 's': e.preventDefault(); App.saveSVG(); break;
+                        case 'z': e.preventDefault(); Editor.undo(); break;
+                        case 'y': e.preventDefault(); Editor.redo(); break;
+                    }
+                }
+                return;
+            }
             
             const key = e.key.toLowerCase();
             switch(key) {
@@ -217,6 +150,9 @@ const Tools = {
                 case 't': this.setActive('textTool'); e.preventDefault(); break;
                 case 'escape': this.deselectElement(); e.preventDefault(); break;
             }
+            
+            // Return focus to editor after tool change
+            document.getElementById('editor').focus();
         });
     },
 
@@ -240,6 +176,8 @@ const Tools = {
         
         // Render tool-specific content
         this.updatePreferencePaneContent();
+        
+        // Update footer info is handled by Preview
     },
 
     deselectElement() {
@@ -264,11 +202,19 @@ const Tools = {
             document.getElementById('paneTitle').textContent = 
                 `${this.getToolName(toolId)} - ${this.activeElement.tagName}#${this.activeElement.id}`;
             this.updatePreferencePaneContent();
+            
+            // Update transform handles if needed
+            if (toolId === 'transformTool') {
+                Preview.addTransformHandles(this.activeElement);
+            } else {
+                Preview.removeTransformHandles();
+            }
         }
         
         Toast.info(`${this.getToolName(toolId)} tool activated`);
     },
 
+    // ... rest of the tool rendering methods remain the same ...
     getToolName(toolId) {
         const tool = this.tools.find(t => t.id === toolId);
         return tool ? tool.name : 'Unknown';
@@ -308,7 +254,6 @@ const Tools = {
         if (window.lucide) lucide.createIcons();
     },
 
-    // SELECT TOOL - Enhanced with editable fields
     renderSelectPane(content) {
         const element = this.activeElement;
         const tag = element.tagName;
@@ -316,7 +261,6 @@ const Tools = {
         const classes = element.getAttribute('class') || '';
         const fill = element.getAttribute('fill') || '#000000';
         const stroke = element.getAttribute('stroke') || 'none';
-        const bbox = element.getBBox ? element.getBBox() : { x: 0, y: 0, width: 100, height: 100 };
         
         content.innerHTML = `
             <div class="property-group">
@@ -347,17 +291,9 @@ const Tools = {
                     <span class="color-hex">${stroke}</span>
                 </label>
             </div>
-            <div class="property-group">
-                <h4>Position & Size (readonly)</h4>
-                <label>X: <input type="number" value="${Math.round(bbox.x)}" readonly></label>
-                <label>Y: <input type="number" value="${Math.round(bbox.y)}" readonly></label>
-                <label>Width: <input type="number" value="${Math.round(bbox.width)}" readonly></label>
-                <label>Height: <input type="number" value="${Math.round(bbox.height)}" readonly></label>
-            </div>
         `;
     },
 
-    // TRANSFORM TOOL - Enhanced with real-time sync
     renderTransformPane(content) {
         const element = this.activeElement;
         const bbox = element.getBBox ? element.getBBox() : { x: 0, y: 0, width: 100, height: 100 };
@@ -389,22 +325,13 @@ const Tools = {
                 <h4>Rotation</h4>
                 <label>
                     <span>Angle:</span>
-                    <input type="range" id="transformRotate" value="0" min="0" max="360" step="15" onchange="Tools.applyTransform()" oninput="Tools.previewTransform()">
-                    <input type="number" id="transformRotateValue" value="0" step="15" onchange="Tools.applyTransform()" style="width: 60px;">
+                    <input type="range" id="transformRotate" value="0" min="0" max="360" step="15" onchange="Tools.applyTransform()" oninput="Tools.previewTransform(); document.getElementById('transformRotateValue').value = this.value">
+                    <input type="number" id="transformRotateValue" value="0" min="0" max="360" step="15" onchange="Tools.applyTransform(); document.getElementById('transformRotate').value = this.value" style="width: 60px; margin-left: 8px;">
                 </label>
             </div>
         `;
-
-        // Sync range and number inputs
-        const range = document.getElementById('transformRotate');
-        const number = document.getElementById('transformRotateValue');
-        if (range && number) {
-            range.addEventListener('input', () => number.value = range.value);
-            number.addEventListener('input', () => range.value = number.value);
-        }
     },
 
-    // SHAPE TOOL - Prepared for bezier curves
     renderShapePane(content) {
         const element = this.activeElement;
         const tag = element.tagName.toLowerCase();
@@ -441,17 +368,6 @@ const Tools = {
                     <label>RY: <input type="number" id="shapeRy" value="${ry}" step="1" onchange="Tools.applyShape()"></label>
                 </div>
             `;
-        } else if (tag === 'path') {
-            const d = element.getAttribute('d') || '';
-            shapeHtml = `
-                <div class="property-group">
-                    <h4>Path Editor (Bezier Coming Soon)</h4>
-                    <textarea id="shapePath" rows="4" style="width: 100%; font-family: monospace;" onchange="Tools.applyShape()">${d}</textarea>
-                    <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
-                        Future: Visual bezier curve editing
-                    </p>
-                </div>
-            `;
         }
         
         content.innerHTML = shapeHtml + `
@@ -463,7 +379,6 @@ const Tools = {
         `;
     },
 
-    // TEXT TOOL - Enhanced with font features
     renderTextPane(content) {
         const element = this.activeElement;
         const textContent = element.textContent;
@@ -481,7 +396,7 @@ const Tools = {
                     <span>Text:</span>
                     <input type="text" id="fontText" value="${textContent}" onchange="Tools.applyText()" placeholder="Enter text...">
                 </label>
-                <small>Press Enter to apply, or edit directly in SVG Editor</small>
+                <small style="color: var(--text-tertiary); display: block; margin-top: 4px;">Edit directly in SVG Editor for more control</small>
             </div>
             <div class="property-group">
                 <h4>Font Family</h4>
@@ -539,29 +454,17 @@ const Tools = {
                 </label>
             </div>
         `;
-
-        // Focus text input to encourage direct editing in SVG Editor
-        setTimeout(() => {
-            const textInput = document.getElementById('fontText');
-            if (textInput) {
-                textInput.focus();
-                textInput.select();
-            }
-        }, 100);
     },
 
-    // Update element attributes with real-time sync
+    // Update methods remain the same...
     updateElementAttribute(attr, value) {
         if (!this.activeElement || this.isUpdating) return;
         
         this.isUpdating = true;
         
-        if (attr === 'tag') {
-            // Changing tag is complex, maybe warn user
-            Toast.info('Tag cannot be changed directly');
-        } else if (attr === 'id') {
+        if (attr === 'id') {
             this.activeElement.id = value;
-        } else {
+        } else if (attr !== 'tag') {
             this.activeElement.setAttribute(attr, value);
         }
         
@@ -571,7 +474,6 @@ const Tools = {
         this.isUpdating = false;
     },
 
-    // Preview transform changes in real-time
     previewTransform() {
         if (!this.activeElement || this.isUpdating) return;
         
@@ -592,6 +494,7 @@ const Tools = {
         }
         
         Preview.showSelectionAnts(this.activeElement);
+        Preview.updateFooterInfo(this.activeElement.id);
         
         this.isUpdating = false;
     },
@@ -601,6 +504,9 @@ const Tools = {
         this.previewTransform();
         this.updateEditor();
         Toast.success('Transform applied');
+        
+        // Return focus to editor
+        document.getElementById('editor').focus();
     },
 
     applyShape() {
@@ -630,9 +536,6 @@ const Tools = {
             if (height) this.activeElement.setAttribute('height', height);
             if (rx) this.activeElement.setAttribute('rx', rx);
             if (ry) this.activeElement.setAttribute('ry', ry);
-        } else if (tag === 'path') {
-            const d = document.getElementById('shapePath')?.value;
-            if (d) this.activeElement.setAttribute('d', d);
         }
         
         const fill = document.getElementById('shapeFill')?.value;
@@ -641,10 +544,13 @@ const Tools = {
         if (stroke) this.activeElement.setAttribute('stroke', stroke);
         
         Preview.showSelectionAnts(this.activeElement);
+        Preview.updateFooterInfo(this.activeElement.id);
         this.updateEditor();
         
         this.isUpdating = false;
         Toast.success('Shape updated');
+        
+        document.getElementById('editor').focus();
     },
 
     applyText() {
@@ -669,10 +575,13 @@ const Tools = {
         if (fontText) this.activeElement.textContent = fontText;
         
         Preview.showSelectionAnts(this.activeElement);
+        Preview.updateFooterInfo(this.activeElement.id);
         this.updateEditor();
         
         this.isUpdating = false;
         Toast.success('Text updated');
+        
+        document.getElementById('editor').focus();
     },
 
     scrollToElementInEditor(elementId) {
@@ -693,16 +602,8 @@ const Tools = {
                 const linesBefore = code.substring(0, start).split('\n').length - 1;
                 const lineHeight = parseInt(getComputedStyle(editor).lineHeight);
                 editor.scrollTop = linesBefore * lineHeight - 100;
-                
-                // Highlight the selection
-                this.highlightEditorSelection(start, end);
             }
         }
-    },
-
-    highlightEditorSelection(start, end) {
-        // Could add visual highlight in editor
-        // For now, just selection is enough
     },
 
     updateEditor() {
