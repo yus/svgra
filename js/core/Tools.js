@@ -533,6 +533,7 @@ const Tools = {
         this.isUpdating = false;
     },
 
+    // applyTransform
     applyTransform() {
         if (!this.activeElement) return;
         
@@ -544,12 +545,12 @@ const Tools = {
         let height = parseFloat(document.getElementById('transformHeight')?.value);
         let rotate = parseFloat(document.getElementById('transformRotate')?.value);
         
-        // Apply snapping
         if (snapToPixel) {
             x = Math.round(x);
             y = Math.round(y);
             width = Math.round(width);
             height = Math.round(height);
+            rotate = Math.round(rotate / 15) * 15;
         }
         
         const tag = this.activeElement.tagName.toLowerCase();
@@ -558,7 +559,7 @@ const Tools = {
             if (!isNaN(x)) this.activeElement.setAttribute('cx', x);
             if (!isNaN(y)) this.activeElement.setAttribute('cy', y);
             if (!isNaN(width)) this.activeElement.setAttribute('r', width/2);
-        } else {
+        } else if (tag === 'rect' || tag === 'text') {
             if (!isNaN(x)) this.activeElement.setAttribute('x', x);
             if (!isNaN(y)) this.activeElement.setAttribute('y', y);
             if (!isNaN(width)) this.activeElement.setAttribute('width', width);
@@ -566,12 +567,18 @@ const Tools = {
         }
         
         if (!isNaN(rotate) && rotate !== 0) {
-            const bbox = this.activeElement.getBBox();
+            let bbox;
+            try {
+                bbox = this.activeElement.getBBox();
+            } catch (e) {
+                bbox = { x: 0, y: 0, width: 100, height: 100 };
+            }
             this.activeElement.setAttribute('transform', 
                 `rotate(${rotate} ${bbox.x + bbox.width/2} ${bbox.y + bbox.height/2})`);
         }
         
         this.updateEditor();
+        Preview.updateElementData(this.activeElement.id);
         Toast.success('Transform applied');
         document.getElementById('editor').focus();
     },
