@@ -157,14 +157,16 @@ const Editor = {
         }
     },
 
+    // loadExample with proper XML
     loadExample() {
-        this.element.value = `<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-  <rect id="background" width="300" height="200" fill="#f0f0f0"/>
-  <circle id="circle1" cx="80" cy="100" r="40" fill="#FF6B6B"/>
-  <rect id="rectangle1" x="150" y="60" width="80" height="80" fill="#4ECDC4"/>
-  <polygon id="triangle1" points="260,100 230,160 290,160" fill="#FFD166"/>
-  <text id="text1" x="150" y="180" text-anchor="middle" font-family="Arial" font-size="16">SVG Elements</text>
-</svg>`;
+        this.element.value = `<?xml version="1.0" encoding="UTF-8"?>
+    <svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+      <rect id="background" x="0" y="0" width="300" height="200" fill="#f0f0f0"/>
+      <circle id="circle1" cx="80" cy="100" r="40" fill="#FF6B6B"/>
+      <rect id="rectangle1" x="150" y="60" width="80" height="80" fill="#4ECDC4"/>
+      <polygon id="triangle1" points="260,100 230,160 290,160" fill="#FFD166"/>
+      <text id="text1" x="150" y="180" text-anchor="middle" font-family="Arial" font-size="16" fill="#333333">SVG Elements</text>
+    </svg>`;
         App.updatePreview();
         App.updateCounters();
         this.pushToHistory();
