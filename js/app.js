@@ -29,53 +29,60 @@ const App = {
         this.setupLayout();
     },
 
+    // App.setupEventListeners
     setupEventListeners() {
-        // Header controls - FIXED: Now properly attached
+        // Header controls
         const loadExampleBtn = document.getElementById('loadExampleBtn');
         const uploadBtn = document.getElementById('uploadBtn');
         const updatePreviewBtn = document.getElementById('updatePreviewBtn');
         const saveBtn = document.getElementById('saveBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-
-        if (loadExampleBtn) {
-            loadExampleBtn.addEventListener('click', () => Editor.loadExample());
-        }
-
-        if (uploadBtn) {
-            uploadBtn.addEventListener('click', () => this.uploadSVG());
-        }
-
-        if (updatePreviewBtn) {
-            updatePreviewBtn.addEventListener('click', () => this.updatePreview());
-        }
-
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.saveSVG());
-        }
-
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => Settings.open());
-        }
-
-        if (closeSettingsBtn) {
-            closeSettingsBtn.addEventListener('click', () => Settings.close());
-        }
-
-        // Editor tool buttons
+    
+        if (loadExampleBtn) loadExampleBtn.addEventListener('click', () => Editor.loadExample());
+        if (uploadBtn) uploadBtn.addEventListener('click', () => this.uploadSVG());
+        if (updatePreviewBtn) updatePreviewBtn.addEventListener('click', () => this.updatePreview());
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveSVG());
+        if (settingsBtn) settingsBtn.addEventListener('click', () => Settings.open());
+        if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => Settings.close());
+    
+        // Editor tool buttons - FIXED: Now properly calling Editor methods
         const formatBtn = document.getElementById('formatBtn');
         const minifyBtn = document.getElementById('minifyBtn');
         const copyBtn = document.getElementById('copyBtn');
         const clearBtn = document.getElementById('clearBtn');
         const undoBtn = document.getElementById('undoBtn');
         const redoBtn = document.getElementById('redoBtn');
-
-        if (formatBtn) formatBtn.addEventListener('click', () => Editor.format());
-        if (minifyBtn) minifyBtn.addEventListener('click', () => Editor.minify());
-        if (copyBtn) copyBtn.addEventListener('click', () => Editor.copy());
-        if (clearBtn) clearBtn.addEventListener('click', () => Editor.clear());
-        if (undoBtn) undoBtn.addEventListener('click', () => Editor.undo());
-        if (redoBtn) redoBtn.addEventListener('click', () => Editor.redo());
+    
+        if (formatBtn) formatBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.format();
+        });
+        
+        if (minifyBtn) minifyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.minify();
+        });
+        
+        if (copyBtn) copyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.copy();
+        });
+        
+        if (clearBtn) clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.clear();
+        });
+        
+        if (undoBtn) undoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.undo();
+        });
+        
+        if (redoBtn) redoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Editor.redo();
+        });
 
         // Preview tool buttons
         const zoomInBtn = document.getElementById('zoomInBtn');
