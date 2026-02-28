@@ -30,42 +30,112 @@ const App = {
     },
 
     setupEventListeners() {
-        // Header controls
-        document.getElementById('loadExampleBtn').addEventListener('click', () => Editor.loadExample());
-        document.getElementById('updatePreviewBtn').addEventListener('click', () => this.updatePreview());
-        document.getElementById('saveBtn').addEventListener('click', () => this.saveSVG());
-        document.getElementById('settingsBtn').addEventListener('click', () => Settings.open());
-        document.getElementById('closeSettingsBtn').addEventListener('click', () => Settings.close());
+        // Header controls - FIXED: Now properly attached
+        const loadExampleBtn = document.getElementById('loadExampleBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const updatePreviewBtn = document.getElementById('updatePreviewBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+        if (loadExampleBtn) {
+            loadExampleBtn.addEventListener('click', () => Editor.loadExample());
+        }
+
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => this.uploadSVG());
+        }
+
+        if (updatePreviewBtn) {
+            updatePreviewBtn.addEventListener('click', () => this.updatePreview());
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveSVG());
+        }
+
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => Settings.open());
+        }
+
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => Settings.close());
+        }
 
         // Editor tool buttons
-        document.getElementById('formatBtn')?.addEventListener('click', () => Editor.format());
-        document.getElementById('minifyBtn')?.addEventListener('click', () => Editor.minify());
-        document.getElementById('copyBtn')?.addEventListener('click', () => Editor.copy());
-        document.getElementById('clearBtn')?.addEventListener('click', () => Editor.clear());
-        document.getElementById('undoBtn')?.addEventListener('click', () => Editor.undo());
-        document.getElementById('redoBtn')?.addEventListener('click', () => Editor.redo());
+        const formatBtn = document.getElementById('formatBtn');
+        const minifyBtn = document.getElementById('minifyBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+
+        if (formatBtn) formatBtn.addEventListener('click', () => Editor.format());
+        if (minifyBtn) minifyBtn.addEventListener('click', () => Editor.minify());
+        if (copyBtn) copyBtn.addEventListener('click', () => Editor.copy());
+        if (clearBtn) clearBtn.addEventListener('click', () => Editor.clear());
+        if (undoBtn) undoBtn.addEventListener('click', () => Editor.undo());
+        if (redoBtn) redoBtn.addEventListener('click', () => Editor.redo());
 
         // Preview tool buttons
-        document.getElementById('zoomInBtn')?.addEventListener('click', () => Preview.zoomIn());
-        document.getElementById('zoomOutBtn')?.addEventListener('click', () => Preview.zoomOut());
-        document.getElementById('resetZoomBtn')?.addEventListener('click', () => Preview.resetZoom());
-        document.getElementById('toggleGridBtn')?.addEventListener('click', () => this.toggleGrid());
-        document.getElementById('toggleViewBoxBtn')?.addEventListener('click', () => this.toggleViewBox());
-        document.getElementById('fitToScreenBtn')?.addEventListener('click', () => Preview.fitToScreen());
-        document.getElementById('centerViewBtn')?.addEventListener('click', () => Preview.centerView());
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetZoomBtn = document.getElementById('resetZoomBtn');
+        const toggleGridBtn = document.getElementById('toggleGridBtn');
+        const toggleViewBoxBtn = document.getElementById('toggleViewBoxBtn');
+        const fitToScreenBtn = document.getElementById('fitToScreenBtn');
+        const centerViewBtn = document.getElementById('centerViewBtn');
+
+        if (zoomInBtn) zoomInBtn.addEventListener('click', () => Preview.zoomIn());
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => Preview.zoomOut());
+        if (resetZoomBtn) resetZoomBtn.addEventListener('click', () => Preview.resetZoom());
+        if (toggleGridBtn) toggleGridBtn.addEventListener('click', () => this.toggleGrid());
+        if (toggleViewBoxBtn) toggleViewBoxBtn.addEventListener('click', () => this.toggleViewBox());
+        if (fitToScreenBtn) fitToScreenBtn.addEventListener('click', () => Preview.fitToScreen());
+        if (centerViewBtn) centerViewBtn.addEventListener('click', () => Preview.centerView());
 
         // Settings changes
-        document.getElementById('fontSize')?.addEventListener('change', (e) => this.updateFontSize(e.target.value));
-        document.getElementById('tabSize')?.addEventListener('change', (e) => this.updateTabSize(e.target.value));
-        document.getElementById('showGrid')?.addEventListener('change', (e) => this.toggleGridSetting(e.target.checked));
-        document.getElementById('gridSize')?.addEventListener('change', (e) => this.updateGridSize(e.target.value));
-        document.getElementById('showViewBox')?.addEventListener('change', (e) => this.toggleViewBoxSetting(e.target.checked));
-        document.getElementById('defaultZoom')?.addEventListener('change', (e) => {
+        const fontSize = document.getElementById('fontSize');
+        const tabSize = document.getElementById('tabSize');
+        const showGrid = document.getElementById('showGrid');
+        const gridSize = document.getElementById('gridSize');
+        const showViewBox = document.getElementById('showViewBox');
+        const defaultZoom = document.getElementById('defaultZoom');
+
+        if (fontSize) fontSize.addEventListener('change', (e) => this.updateFontSize(e.target.value));
+        if (tabSize) tabSize.addEventListener('change', (e) => this.updateTabSize(e.target.value));
+        if (showGrid) showGrid.addEventListener('change', (e) => this.toggleGridSetting(e.target.checked));
+        if (gridSize) gridSize.addEventListener('change', (e) => this.updateGridSize(e.target.value));
+        if (showViewBox) showViewBox.addEventListener('change', (e) => this.toggleViewBoxSetting(e.target.checked));
+        if (defaultZoom) defaultZoom.addEventListener('change', (e) => {
             Preview.zoomLevel = parseInt(e.target.value);
             Preview.applyZoom();
         });
     },
 
+    // New upload function
+    uploadSVG() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.svg,image/svg+xml';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                Editor.setValue(e.target.result);
+                this.updatePreview();
+                Toast.success('SVG uploaded successfully');
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    },
+
+    // Rest of the App object remains the same...
     setupLayout() {
         const checkLayout = () => {
             const width = window.innerWidth;
@@ -74,9 +144,17 @@ const App = {
             if (width < 768) {
                 mainContent.style.gridTemplateColumns = '1fr';
                 mainContent.style.gridTemplateRows = '1fr 1fr';
+                // Hide text labels on mobile
+                document.querySelectorAll('.btn-text').forEach(el => {
+                    el.style.display = 'none';
+                });
             } else {
                 mainContent.style.gridTemplateColumns = '1fr 1fr';
                 mainContent.style.gridTemplateRows = '1fr';
+                // Show text labels on desktop
+                document.querySelectorAll('.btn-text').forEach(el => {
+                    el.style.display = 'inline';
+                });
             }
         };
         
@@ -100,15 +178,19 @@ const App = {
         const charCount = document.getElementById('charCount');
         const lineCount = document.getElementById('lineCount');
         
-        charCount.innerHTML = `
-            <i data-lucide="text" class="icon-sm"></i>
-            <span>${editor.value.length} chars</span>
-        `;
+        if (charCount) {
+            charCount.innerHTML = `
+                <i data-lucide="text" class="icon-sm"></i>
+                <span>${editor.value.length} chars</span>
+            `;
+        }
         
-        lineCount.innerHTML = `
-            <i data-lucide="edit-3" class="icon-sm"></i>
-            <span>Lines: ${editor.value.split('\n').length}</span>
-        `;
+        if (lineCount) {
+            lineCount.innerHTML = `
+                <i data-lucide="edit-3" class="icon-sm"></i>
+                <span>Lines: ${editor.value.split('\n').length}</span>
+            `;
+        }
         
         if (window.lucide) lucide.createIcons();
     },
@@ -134,10 +216,12 @@ const App = {
 
     updateElementCount(count) {
         const elementCount = document.getElementById('elementCount');
-        elementCount.innerHTML = `
-            <i data-lucide="layers" class="icon-sm"></i>
-            <span>Elements: ${count}</span>
-        `;
+        if (elementCount) {
+            elementCount.innerHTML = `
+                <i data-lucide="layers" class="icon-sm"></i>
+                <span>Elements: ${count}</span>
+            `;
+        }
         if (window.lucide) lucide.createIcons();
     },
 
@@ -146,36 +230,44 @@ const App = {
         const objectPosition = document.getElementById('objectPosition');
         const objectSize = document.getElementById('objectSize');
         
-        if (id && Preview.elementData[id]) {
+        if (id && Preview.elementData && Preview.elementData[id]) {
             const data = Preview.elementData[id];
-            selectedObject.textContent = `${data.tag} #${id}`;
-            objectPosition.textContent = `x: ${Math.round(data.position.x)}, y: ${Math.round(data.position.y)}`;
-            objectSize.textContent = `${Math.round(data.size.width)}×${Math.round(data.size.height)}`;
+            if (selectedObject) selectedObject.textContent = `${data.tag} #${id}`;
+            if (objectPosition) objectPosition.textContent = `x: ${Math.round(data.position.x)}, y: ${Math.round(data.position.y)}`;
+            if (objectSize) objectSize.textContent = `${Math.round(data.size.width)}×${Math.round(data.size.height)}`;
         } else {
-            selectedObject.textContent = 'No selection';
-            objectPosition.textContent = '';
-            objectSize.textContent = '';
+            if (selectedObject) selectedObject.textContent = 'No selection';
+            if (objectPosition) objectPosition.textContent = '';
+            if (objectSize) objectSize.textContent = '';
         }
     },
 
     // Grid functions
     toggleGrid() {
         this.isGridVisible = !this.isGridVisible;
-        document.getElementById('gridOverlay').classList.toggle('active', this.isGridVisible);
-        document.getElementById('toggleGridBtn').classList.toggle('active', this.isGridVisible);
+        const gridOverlay = document.getElementById('gridOverlay');
+        const toggleGridBtn = document.getElementById('toggleGridBtn');
+        
+        if (gridOverlay) gridOverlay.classList.toggle('active', this.isGridVisible);
+        if (toggleGridBtn) toggleGridBtn.classList.toggle('active', this.isGridVisible);
         Toast.info(this.isGridVisible ? 'Grid enabled' : 'Grid disabled');
     },
 
     toggleGridSetting(visible) {
         this.isGridVisible = visible;
-        document.getElementById('gridOverlay').classList.toggle('active', visible);
-        document.getElementById('showGrid').checked = visible;
+        const gridOverlay = document.getElementById('gridOverlay');
+        const showGrid = document.getElementById('showGrid');
+        
+        if (gridOverlay) gridOverlay.classList.toggle('active', visible);
+        if (showGrid) showGrid.checked = visible;
     },
 
     updateGrid() {
         const gridSize = parseInt(localStorage.getItem('svgEditor_gridSize') || '20');
         const gridOverlay = document.getElementById('gridOverlay');
-        gridOverlay.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        if (gridOverlay) {
+            gridOverlay.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        }
     },
 
     updateGridSize(size) {
@@ -187,24 +279,31 @@ const App = {
     // ViewBox functions
     toggleViewBox() {
         this.isViewBoxVisible = !this.isViewBoxVisible;
-        document.getElementById('viewboxIndicator').classList.toggle('active', this.isViewBoxVisible);
-        document.getElementById('toggleViewBoxBtn').classList.toggle('active', this.isViewBoxVisible);
+        const viewboxIndicator = document.getElementById('viewboxIndicator');
+        const toggleViewBoxBtn = document.getElementById('toggleViewBoxBtn');
+        
+        if (viewboxIndicator) viewboxIndicator.classList.toggle('active', this.isViewBoxVisible);
+        if (toggleViewBoxBtn) toggleViewBoxBtn.classList.toggle('active', this.isViewBoxVisible);
     },
 
     toggleViewBoxSetting(visible) {
         this.isViewBoxVisible = visible;
-        document.getElementById('viewboxIndicator').classList.toggle('active', visible);
-        document.getElementById('showViewBox').checked = visible;
+        const viewboxIndicator = document.getElementById('viewboxIndicator');
+        const showViewBox = document.getElementById('showViewBox');
+        
+        if (viewboxIndicator) viewboxIndicator.classList.toggle('active', visible);
+        if (showViewBox) showViewBox.checked = visible;
     },
 
     updateViewBox() {
-        const svgElement = document.getElementById('preview').firstChild;
+        const svgElement = document.getElementById('preview')?.firstChild;
         const indicator = document.getElementById('viewboxIndicator');
         
-        if (svgElement && svgElement.tagName === 'svg') {
+        if (svgElement && svgElement.tagName === 'svg' && indicator) {
             const viewBox = Utils.getViewBox(svgElement);
             if (viewBox) {
-                const containerRect = document.querySelector('.preview-container').getBoundingClientRect();
+                const containerRect = document.querySelector('.preview-container')?.getBoundingClientRect();
+                if (!containerRect) return;
                 
                 const scale = Math.min(
                     (containerRect.width - 40) / viewBox.width,
@@ -228,7 +327,7 @@ const App = {
         localStorage.setItem('svgEditor_theme', theme);
         
         document.querySelectorAll('.theme-option').forEach(opt => {
-            opt.classList.toggle('selected', opt.dataset.theme === theme);
+            opt.classList.toggle('selected', opt.dataset?.theme === theme);
         });
         
         if (window.lucide) lucide.createIcons();
@@ -236,7 +335,9 @@ const App = {
     },
 
     updateFontSize(size) {
-        Editor.element.style.fontSize = size + 'px';
+        if (Editor.element) {
+            Editor.element.style.fontSize = size + 'px';
+        }
         localStorage.setItem('svgEditor_fontSize', size);
         Toast.info(`Font size set to ${size}px`);
     },
