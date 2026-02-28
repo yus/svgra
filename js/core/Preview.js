@@ -350,16 +350,19 @@ const Preview = {
         };
         this.dragMode = handle.action || 'move';
         
-        // Safely get bbox
-        try {
-            this.originalBBox = element.getBBox();
-        } catch (e) {
-            this.originalBBox = { x: 0, y: 0, width: 100, height: 100 };
+        // Store original position for move operations
+        const tag = element.tagName.toLowerCase();
+        if (tag === 'circle') {
+            this.dragStart.cx = parseFloat(element.getAttribute('cx') || '50');
+            this.dragStart.cy = parseFloat(element.getAttribute('cy') || '50');
+        } else if (tag === 'rect' || tag === 'text') {
+            this.dragStart.x = parseFloat(element.getAttribute('x') || '0');
+            this.dragStart.y = parseFloat(element.getAttribute('y') || '0');
         }
         
         element.classList.add('element-hover');
         
-        // Show preview line for rotation
+        // Preview line for rotation
         if (this.dragMode === 'rotate' && this.previewLine) {
             const pos = Utils.getElementPosition(element, this.container);
             this.previewLine.style.display = 'block';
