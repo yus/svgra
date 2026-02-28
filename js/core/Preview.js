@@ -362,40 +362,7 @@ const Preview = {
         }
     },
 
-    handleDrag(e) {
-        if (!this.isDragging || !this.selectedId || !this.dragStart) return;
-        
-        const element = this.element.querySelector(`#${CSS.escape(this.selectedId)}`);
-        if (!element) return;
-        
-        const dx = e.clientX - this.dragStart.x;
-        const dy = e.clientY - this.dragStart.y;
-        const tag = element.tagName.toLowerCase();
-        
-        switch (this.dragMode) {
-            case 'move':
-                this.handleMove(element, tag, dx, dy);
-                break;
-            case 'scale':
-            case 'scale-x':
-            case 'scale-y':
-                this.handleScale(element, tag, dx, dy);
-                break;
-            case 'rotate':
-                this.handleRotate(element, dx, dy);
-                break;
-        }
-        
-        this.dragStart.x = e.clientX;
-        this.dragStart.y = e.clientY;
-        
-        this.showSelectionAnts(element);
-        this.removeTransformHandles();
-        this.addTransformHandles(element);
-        this.updateElementData(this.selectedId);
-    },
-
-    // Fixed polygon handling
+   // Fixed polygon handling
     handleMove(element, tag, dx, dy) {
         if (tag === 'circle') {
             const cx = parseFloat(element.getAttribute('cx') || '0') + dx;
@@ -422,8 +389,18 @@ const Preview = {
         }
     },
 
-    // Fixed scaling for circles
-    handleScale(element, tag, dx, dy, handleType) {
+    handleScale(element, tag, dx, dy, handleType = 'scale') {
+        if (!element) return;
+        
+        // Ensure handleType is defined
+        const type = handleType || 'scale';
+        
+        // Check if element has getBBox method (SVG elements do, but safety first)
+        if (typeof element.getBBox !== 'function') {
+            console.warn('Element does not support getBBox');
+            return;
+        }
+        
         const bbox = element.getBBox();
         
         if (tag === 'circle') {
@@ -431,27 +408,92 @@ const Preview = {
             const cy = parseFloat(element.getAttribute('cy') || bbox.y + bbox.height/2);
             const r = parseFloat(element.getAttribute('r') || bbox.width/2);
             
-            // Calculate scale based on handle position
-            let scale = 1 + (dx + dy) / 200; // More controlled scaling
+            // Calculate scale based on handle position with safety
+            let scale = 1;
+            if (type.includes('scale-x')) {
+                scale = 1 + dx / 100;
+            } else if (type.includes('scale-y')) {
+                scale = 1 + dy / 100;
+            } else {
+                scale = 1 + (dx + dy) / 200;
+            }
             
-            // Ensure minimum size
-            const newR = Math.max(5, r * scale);
-            element.setAttribute('r', newR);
+            // Ensure minimum size and valid number
+            const newR = Math.max(5, Math.abs(r * scale));
+            if (!isNaN(newR) && isFinite(newR)) {
+                element.setAttribute('r', newR);
+            }
             
         } else if (tag === 'rect' || tag === 'text') {
+            // Get current values with fallbacks
             const x = parseFloat(element.getAttribute('x') || bbox.x);
             const y = parseFloat(element.getAttribute('y') || bbox.y);
             const width = parseFloat(element.getAttribute('width') || bbox.width);
             const height = parseFloat(element.getAttribute('height') || bbox.height);
             
-            if (handleType.includes('scale-x') || handleType === 'scale') {
-                const newWidth = Math.max(5, width * (1 + dx / 100));
-                element.setAttribute('width', newWidth);
+            // Apply scaling based on handle type
+            if (type.includes('scale-x') || type === 'scale') {
+                const newWidth = Math.max(5, Math.abs(width * (1 + dx / 100)));
+                if (!isNaN(newWidth) && isFinite(newWidth)) {
+                    element.setAttribute('width', newWidth);
+                }
             }
-            if (handleType.includes('scale-y') || handleType === 'scale') {
-                const newHeight = Math.max(5, height * (1 + dy / 100));
-                element.setAttribute('height', newHeight);
+            if (type.includes('scale-y') || type === 'scale') {
+                const newHeight = Math.max(5, Math.abs(height * (1 + dy / 100)));
+                if (!isNaN(newHeight) && isFinite(newHeight)) {
+                    element.setAttribute('height', newHeight);
+                }
             }
+        }
+    },
+
+    handleDrag(e) {
+        if (!this.isDragging || !this.selectedId || !this.dragStart) return;
+        
+        const element = this.element.querySelector(`#${CSS.escape(this.selectedId)}`);
+        if (!element) return;
+        
+        const dx = e.clientX - this.dragStart.x;
+        const dy = e.clientY - this.dragStart.y;
+        const tag = element.tagName.toLowerCase();
+        
+        // Ensure dragMode has a value
+        const dragMode = this.dragMode || 'move';
+        const handleType = this.dragStart.handle?.type || 'corner';
+        
+        switch (dragMode) {
+            case 'move':
+                this.handleMove(element, tag, dx, dy);
+                break;
+            case 'scale':
+            case 'scale-x':
+            case 'scale-y':
+                this.handleScale(element, tag, dx, dy, dragMode);
+                break;
+            case 'rotate':
+                this.handleRotate(element, dx, dy);
+                break;
+        }
+        
+        this.dragStart.x = e.clientX;
+        this.dragStart.y = e.clientY;
+        
+        this.showSelectionAnts(element);
+        this.removeTransformHandles();
+        this.addTransformHandles(element);
+        this.updateElementData(this.selectedId);
+    },
+
+    // Safe getBBox wrapper
+    safeGetBBox(element) {
+        if (!element || typeof element.getBBox !== 'function') {
+            return { x: 0, y: 0, width: 100, height: 100 };
+        }
+        try {
+            return element.getBBox();
+        } catch (e) {
+            console.warn('getBBox failed:', e);
+            return { x: 0, y: 0, width: 100, height: 100 };
         }
     },
 
