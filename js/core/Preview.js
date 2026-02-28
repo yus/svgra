@@ -337,7 +337,10 @@ const Preview = {
         }
     },
 
+    // startTransform
     startTransform(element, handle, e) {
+        if (!element || !handle) return;
+        
         this.isDragging = true;
         this.dragStart = {
             x: e.clientX,
@@ -346,7 +349,13 @@ const Preview = {
             originalAttrs: this.getElementAttributes(element)
         };
         this.dragMode = handle.action || 'move';
-        this.originalBBox = element.getBBox();
+        
+        // Safely get bbox
+        try {
+            this.originalBBox = element.getBBox();
+        } catch (e) {
+            this.originalBBox = { x: 0, y: 0, width: 100, height: 100 };
+        }
         
         element.classList.add('element-hover');
         
