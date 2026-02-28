@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>SVGRA v0.0.1</title>
+    <title>SVGRA Editor v0.0.1</title>
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/main.css">
@@ -16,12 +16,39 @@
         <!-- Header -->
         <header class="header">
             <div class="logo-container">
-                <img src="assets/logo.svg" class="logo" alt="SVG RA Logo">
-                <span class="app-title">SVG RA Editor</span>
+                <!-- Your corrected logo SVG -->
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="10" width="80" height="80" fill="var(--primary-color, #2d4c6c)" rx="8" ry="8" />
+                    <circle cx="50" cy="50" r="30" fill="white" />
+                </svg>
+                <span class="app-title">SVGRA Editor</span>
             </div>
             
-            <div class="header-controls" id="headerControls"></div>
+            <div class="header-controls" id="headerControls">
+                <button class="btn" id="loadExampleBtn" title="Load Example SVG">
+                    <i data-lucide="file-code-2" class="icon"></i>
+                    <span class="btn-text">Example</span>
+                </button>
+                <button class="btn" id="uploadBtn" title="Upload SVG">
+                    <i data-lucide="upload" class="icon"></i>
+                    <span class="btn-text">Upload</span>
+                </button>
+                <button class="btn btn-primary" id="updatePreviewBtn" title="Update Preview">
+                    <i data-lucide="refresh-cw" class="icon"></i>
+                    <span class="btn-text">Update</span>
+                </button>
+                <button class="btn" id="saveBtn" title="Save SVG">
+                    <i data-lucide="save" class="icon"></i>
+                    <span class="btn-text">Save</span>
+                </button>
+                <button class="btn" id="settingsBtn" title="Settings">
+                    <i data-lucide="settings" class="icon"></i>
+                    <span class="btn-text">Settings</span>
+                </button>
+            </div>
         </header>
+
+        <!-- Rest of the HTML remains the same... -->
 
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
