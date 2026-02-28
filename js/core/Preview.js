@@ -455,7 +455,23 @@ const Preview = {
         }
     },
 
-    // Fixed rotation handler
+    getRotationFromTransform(transformString) {
+        if (!transformString) return { angle: 0, cx: null, cy: null };
+        
+        // Look for rotate(angle) or rotate(angle cx cy)
+        const rotateMatch = transformString.match(/rotate\(\s*([-\d.]+)(?:\s+([-\d.]+)\s+([-\d.]+))?\s*\)/);
+        
+        if (rotateMatch) {
+            return {
+                angle: parseFloat(rotateMatch[1]) || 0,
+                cx: rotateMatch[2] ? parseFloat(rotateMatch[2]) : null,
+                cy: rotateMatch[3] ? parseFloat(rotateMatch[3]) : null
+            };
+        }
+        return { angle: 0, cx: null, cy: null };
+    },
+    
+    // handleRotate
     handleRotate(element, dx, dy) {
         const bbox = element.getBBox();
         const center = {
@@ -463,39 +479,26 @@ const Preview = {
             y: bbox.y + bbox.height / 2
         };
         
-        // Get current rotation
         const currentTransform = element.getAttribute('transform') || '';
-        const rotateMatch = currentTransform.match(/rotate\(([^,)]+)(?:,([^,)]+)(?:,([^,)]+))?\)/);
-        let currentRotate = 0;
-        let rotateX = center.x;
-        let rotateY = center.y;
+        const rotation = this.getRotationFromTransform(currentTransform);
         
-        if (rotateMatch) {
-            currentRotate = parseFloat(rotateMatch[1]);
-            if (rotateMatch[2]) rotateX = parseFloat(rotateMatch[2]);
-            if (rotateMatch[3]) rotateY = parseFloat(rotateMatch[3]);
-        }
+        // Calculate rotation angle (reduced sensitivity)
+        const angle = Math.atan2(dy, dx) * 5;
+        const newAngle = (rotation.angle + angle) % 360;
         
-        // Calculate rotation angle based on mouse movement (more controlled)
-        const angle = Math.atan2(dy, dx) * 10; // Reduced sensitivity
+        // Remove old transform and add new rotation
+        let newTransform = currentTransform.replace(/rotate\([^)]*\)/g, '').trim();
         
-        // Remove old rotation and add new one
-        let newTransform = currentTransform.replace(/rotate\([^)]+\)/, '').trim();
-        const newRotate = currentRotate + angle;
-        
-        // Keep rotation within 0-360
-        const finalRotate = ((newRotate % 360) + 360) % 360;
-        
-        // Add rotation with explicit center point for stability
+        // Use center point for stable rotation
         element.setAttribute('transform', 
-            `rotate(${finalRotate.toFixed(1)} ${rotateX} ${rotateY}) ${newTransform}`.trim());
+            `rotate(${newAngle.toFixed(1)} ${center.x} ${center.y}) ${newTransform}`.trim());
         
         // Update preview line
         if (this.previewLine) {
             const pos = Utils.getElementPosition(element, this.container);
             this.previewLine.style.left = pos.left + pos.width/2 + 'px';
             this.previewLine.style.top = pos.top + pos.height/2 + 'px';
-            this.previewLine.style.transform = `rotate(${finalRotate}deg)`;
+            this.previewLine.style.transform = `rotate(${newAngle}deg)`;
         }
     },
 
