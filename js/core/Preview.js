@@ -2,30 +2,23 @@
 
 const Preview = {
     element: document.getElementById('preview'),
-    container: document.querySelector('.preview-container'),
+    container: document.querySelector('.workspace-area'),
     zoomLevel: 100,
     selectedId: null,
     elements: [],
     elementData: {},
+    selectionAnts: null,
     
     init() {
-        document.getElementById('previewContainer').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget || e.target.id === 'preview') {
-                this.clearSelection();
-                return;
-            }
-            
-            let element = e.target;
-            while (element && element.parentElement && element.parentElement.id !== 'preview') {
-                element = element.parentElement;
-            }
-            
-            if (element && element.id && element !== this.element) {
-                e.stopPropagation();
-                this.selectElement(element.id);
-                Tools.handleElementSelect(element.id);
-            }
-        });
+        if (!this.container) {
+            this.container = document.querySelector('.workspace-area');
+        }
+        
+        // Create selection ants element
+        this.selectionAnts = document.createElement('div');
+        this.selectionAnts.className = 'selection-ants';
+        this.selectionAnts.style.display = 'none';
+        this.container?.appendChild(this.selectionAnts);
     },
 
     update(svgString) {
@@ -88,40 +81,40 @@ const Preview = {
 
     selectElement(id) {
         this.selectedId = id;
-        App.updateObjectInfo(id);
         
         if (id) {
             const element = this.element.querySelector(`#${CSS.escape(id)}`);
-            this.highlightElement(element);
+            if (element) {
+                this.showSelectionAnts(element);
+            }
         } else {
-            this.clearSelection();
+            this.hideSelectionAnts();
         }
+        
+        App.updateObjectInfo(id);
     },
 
-    highlightElement(element) {
-        if (!element) return;
-        
-        const overlay = document.getElementById('selectionOverlay');
-        const info = document.getElementById('selectionInfo');
+    showSelectionAnts(element) {
+        if (!this.selectionAnts || !this.container || !element) return;
         
         const pos = Utils.getElementPosition(element, this.container);
         
-        overlay.style.left = pos.left + 'px';
-        overlay.style.top = pos.top + 'px';
-        overlay.style.width = pos.width + 'px';
-        overlay.style.height = pos.height + 'px';
-        overlay.classList.add('active');
-        
-        info.style.left = (pos.left + pos.width - 5) + 'px';
-        info.style.top = (pos.top + 5) + 'px';
-        info.textContent = `${element.tagName} #${element.id}`;
-        info.classList.add('active');
+        this.selectionAnts.style.display = 'block';
+        this.selectionAnts.style.left = pos.left + 'px';
+        this.selectionAnts.style.top = pos.top + 'px';
+        this.selectionAnts.style.width = pos.width + 'px';
+        this.selectionAnts.style.height = pos.height + 'px';
+    },
+
+    hideSelectionAnts() {
+        if (this.selectionAnts) {
+            this.selectionAnts.style.display = 'none';
+        }
     },
 
     clearSelection() {
-        document.getElementById('selectionOverlay').classList.remove('active');
-        document.getElementById('selectionInfo').classList.remove('active');
         this.selectedId = null;
+        this.hideSelectionAnts();
         App.updateObjectInfo(null);
     },
 
