@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>SVGRA Editor v0.0.1</title>
+    <title>SVGRA Editor</title>
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/main.css">
@@ -16,10 +16,11 @@
         <!-- Header -->
         <header class="header">
             <div class="logo-container">
-                <!-- Your corrected logo SVG -->
+                <!-- Your logo with Deep Atlantic Blue -->
                 <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <rect x="10" y="10" width="80" height="80" fill="var(--primary-color, #2d4c6c)" rx="8" ry="8" />
                     <circle cx="50" cy="50" r="30" fill="white" />
+                    <text x="50" y="65" text-anchor="middle" font-family="Arial" font-size="24" fill="var(--primary-color, #2d4c6c)" font-weight="bold">Tt</text>
                 </svg>
                 <span class="app-title">SVGRA Editor</span>
             </div>
@@ -48,8 +49,6 @@
             </div>
         </header>
 
-        <!-- Rest of the HTML remains the same... -->
-
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
             <!-- Editor Panel -->
@@ -65,7 +64,7 @@
                     </div>
                 </div>
                 
-                <!-- Tool Palette -->
+                <!-- Editor Tool Palette -->
                 <div class="tool-palette" id="editorToolPalette"></div>
                 
                 <div class="editor-container">
@@ -78,7 +77,7 @@
                 <div class="panel-header">
                     <h2 class="panel-title">
                         <i data-lucide="eye" class="icon"></i>
-                        Live Preview
+                        Workspace
                     </h2>
                     <div class="status-badge" id="elementCount">
                         <i data-lucide="layers" class="icon-sm"></i>
@@ -86,43 +85,62 @@
                     </div>
                 </div>
                 
-                <!-- Tool Palette -->
-                <div class="tool-palette" id="previewToolPalette"></div>
-                
-                <!-- Tools Panel -->
-                <div class="tools-panel" id="toolsPanel"></div>
-                
-                <div class="preview-container" id="previewContainer">
-                    <!-- Grid overlay -->
-                    <div class="grid-overlay" id="gridOverlay"></div>
+                <div class="preview-content">
+                    <!-- Vertical Tools Sidebar -->
+                    <div class="tools-sidebar" id="toolsPanel"></div>
                     
-                    <!-- ViewBox indicator -->
-                    <div class="viewbox-indicator" id="viewboxIndicator"></div>
-                    
-                    <!-- Selection overlay -->
-                    <div class="selection-overlay" id="selectionOverlay"></div>
-                    
-                    <!-- Selection info -->
-                    <div class="selection-info" id="selectionInfo"></div>
-                    
-                    <!-- SVG Preview -->
-                    <div id="preview"></div>
+                    <!-- Workspace Area -->
+                    <div class="workspace-container">
+                        <!-- Workspace Toolbar (Zoom/Grid) -->
+                        <div class="workspace-toolbar" id="workspaceToolbar"></div>
+                        
+                        <!-- Workspace Area -->
+                        <div class="workspace-area" id="previewContainer">
+                            <!-- Grid overlay -->
+                            <div class="grid-overlay" id="gridOverlay"></div>
+                            
+                            <!-- ViewBox indicator -->
+                            <div class="viewbox-indicator" id="viewboxIndicator"></div>
+                            
+                            <!-- Selection overlay -->
+                            <div class="selection-overlay" id="selectionOverlay"></div>
+                            
+                            <!-- Selection info -->
+                            <div class="selection-info" id="selectionInfo"></div>
+                            
+                            <!-- SVG Preview -->
+                            <div id="preview"></div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <div class="status" id="footerStatus"></div>
-            <div class="object-info" id="objectInfo"></div>
+            <div class="status" id="footerStatus">
+                <span class="status-item" id="charCount">
+                    <i data-lucide="text" class="icon-sm"></i>
+                    <span>0 chars</span>
+                </span>
+                <span class="status-item" id="cursorPosition">
+                    <i data-lucide="pencil" class="icon-sm"></i>
+                    <span>Ln 1, Col 1</span>
+                </span>
+            </div>
+            <div class="object-info" id="objectInfo">
+                <span id="selectedObject">No selection</span>
+                <span id="objectPosition"></span>
+                <span id="objectSize"></span>
+            </div>
             <div class="version">
                 <i data-lucide="code" class="icon-sm"></i>
-                v0.4.0 pre-alpha
+                v0.4.0.1 pre-alpha
             </div>
         </footer>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Quick Actions (mobile) -->
     <div class="quick-actions" id="quickActions"></div>
 
     <!-- Settings Modal -->
