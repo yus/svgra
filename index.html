@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVGRA Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SVG RA Editor</title>
     <!-- Lucide CSS for base styling -->
     <style>
         * {
@@ -12,58 +12,139 @@
             box-sizing: border-box;
         }
 
+        /* CSS Custom Properties for Theming - Enhanced Contrast */
+        :root {
+            /* Light theme (default) */
+            --primary-color: #0066cc;
+            --primary-hover: #0052a3;
+            --primary-light: rgba(0, 102, 204, 0.1);
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e9e9e9;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-tertiary: #6e6e6e;
+            
+            --border-color: #d1d1d1;
+            --border-focus: #0066cc;
+            
+            --success-color: #2e7d32;
+            --warning-color: #ed6c02;
+            --error-color: #d32f2f;
+            
+            --toolbar-bg: #f8f9fa;
+            --selection-bg: rgba(0, 102, 204, 0.15);
+            --overlay-bg: rgba(0, 0, 0, 0.5);
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            
+            --editor-bg: #ffffff;
+            --editor-text: #1a1a1a;
+        }
+
+        /* Dark theme - High contrast */
+        .dark-theme {
+            --primary-color: #66b0ff;
+            --primary-hover: #4d9eff;
+            --primary-light: rgba(102, 176, 255, 0.15);
+            
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-tertiary: #b0b0b0;
+            
+            --border-color: #555555;
+            --border-focus: #66b0ff;
+            
+            --success-color: #81c784;
+            --warning-color: #ffb74d;
+            --error-color: #e57373;
+            
+            --toolbar-bg: #363636;
+            --selection-bg: rgba(102, 176, 255, 0.2);
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+            
+            --editor-bg: #1e1e1e;
+            --editor-text: #e0e0e0;
+        }
+
+        /* Monokai theme - High contrast */
+        .monokai-theme {
+            --primary-color: #66d9ef;
+            --primary-hover: #5ac8e6;
+            --primary-light: rgba(102, 217, 239, 0.15);
+            
+            --bg-primary: #272822;
+            --bg-secondary: #3e3d32;
+            --bg-tertiary: #4e4d40;
+            
+            --text-primary: #f8f8f2;
+            --text-secondary: #e6db74;
+            --text-tertiary: #a6e22e;
+            
+            --border-color: #75715e;
+            --border-focus: #66d9ef;
+            
+            --success-color: #a6e22e;
+            --warning-color: #fd971f;
+            --error-color: #f92672;
+            
+            --toolbar-bg: #3e3d32;
+            --selection-bg: rgba(102, 217, 239, 0.2);
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+            
+            --editor-bg: #272822;
+            --editor-text: #f8f8f2;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             line-height: 1.4;
             overflow: hidden;
+            height: 100vh;
+            width: 100vw;
         }
 
-        /* Theme variables */
-        :root {
-            --primary-color: #0066cc;
-            --border-color: #ddd;
-            --bg-light: #fff;
-            --bg-dark: #1e1e1e;
-            --text-light: #333;
-            --text-dark: #f0f0f0;
-            --editor-bg-light: #fff;
-            --editor-bg-dark: #1e1e1e;
-            --editor-text-light: #333;
-            --editor-text-dark: #f0f0f0;
-            --selection-color: rgba(0, 102, 204, 0.2);
-            --toolbar-bg: #f8f9fa;
-        }
-
-        .dark-theme {
-            background: #2d2d2d;
-            color: #f0f0f0;
-            --border-color: #444;
-            --bg-light: #2d2d2d;
-            --text-light: #f0f0f0;
-            --toolbar-bg: #363636;
-        }
-
-        .monokai-theme {
-            background: #272822;
-            color: #f8f8f2;
-            --border-color: #75715e;
-            --bg-light: #272822;
-            --text-light: #f8f8f2;
-            --toolbar-bg: #3e3d32;
-            --editor-bg-dark: #272822;
-            --editor-text-dark: #f8f8f2;
-        }
-
-        /* App container */
+        /* App container with CSS Grid Layout */
         .app-container {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
             height: 100vh;
             width: 100vw;
             padding: 3px;
             gap: 3px;
+            background: var(--bg-secondary);
+        }
+
+        /* Responsive breakpoints */
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+            
+            .tool-palette {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
         }
 
         /* Header */
@@ -71,12 +152,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-light);
+            background: var(--bg-primary);
             padding: 8px 12px;
             border: 1px solid var(--border-color);
             border-radius: 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            min-height: 44px;
+            box-shadow: var(--shadow-sm);
+            min-height: 48px;
         }
 
         .logo-container {
@@ -90,10 +171,14 @@
             width: auto;
         }
 
+        .logo svg {
+            filter: drop-shadow(var(--shadow-sm));
+        }
+
         .app-title {
             font-size: 0.85em;
             font-weight: 600;
-            color: var(--text-light);
+            color: var(--text-primary);
             white-space: nowrap;
         }
 
@@ -106,21 +191,27 @@
         /* Buttons */
         .btn {
             padding: 6px 12px;
-            background: var(--bg-light);
+            background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 0;
             cursor: pointer;
             font-size: 0.8em;
-            color: var(--text-light);
-            transition: all 0.2s;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            min-height: 32px;
         }
 
         .btn:hover {
-            background: var(--border-color);
+            background: var(--bg-tertiary);
+            border-color: var(--border-focus);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
         }
 
         .btn-primary {
@@ -130,8 +221,8 @@
         }
 
         .btn-primary:hover {
-            background: #0052a3;
-            border-color: #0052a3;
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
 
         .btn-icon {
@@ -147,26 +238,41 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            color: currentColor;
         }
 
-        /* Main content area */
+        .btn.active {
+            background: var(--primary-light);
+            border-color: var(--primary-color);
+        }
+
+        /* Main content area with CSS Grid */
         .main-content {
-            flex: 1;
-            display: flex;
+            display: grid;
             gap: 3px;
             min-height: 0;
+            overflow: hidden;
         }
 
         /* Editor panel */
         .editor-panel {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--bg-light);
+            background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 0;
             overflow: hidden;
-            min-width: 300px;
+            min-width: 0;
+        }
+
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            overflow: hidden;
+            min-width: 0;
         }
 
         .panel-header {
@@ -181,7 +287,10 @@
         .panel-title {
             font-size: 0.9em;
             font-weight: 600;
-            color: var(--text-light);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         /* Tool palette */
@@ -200,7 +309,7 @@
             gap: 2px;
             align-items: center;
             padding: 2px;
-            background: var(--bg-light);
+            background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 3px;
         }
@@ -210,10 +319,16 @@
             background: transparent;
             min-width: 28px;
             min-height: 28px;
+            color: var(--text-primary);
         }
 
         .tool-group .btn-icon:hover {
-            background: var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .tool-group .btn-icon.active {
+            background: var(--primary-light);
+            color: var(--primary-color);
         }
 
         .tool-separator {
@@ -239,40 +354,23 @@
             font-size: 13px;
             line-height: 1.5;
             resize: none;
-            color: var(--editor-text-light);
-            background: var(--editor-bg-light);
+            color: var(--editor-text);
+            background: var(--editor-bg);
             transition: all 0.3s ease;
+            outline: none;
         }
 
-        .dark-theme #editor {
-            color: var(--editor-text-dark);
-            background: var(--editor-bg-dark);
+        #editor:focus {
+            box-shadow: inset 0 0 0 2px var(--primary-light);
         }
 
-        .monokai-theme #editor {
-            color: var(--editor-text-dark);
-            background: var(--editor-bg-dark);
-        }
-
-        /* Preview panel */
-        .preview-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-radius: 0;
-            overflow: hidden;
-            min-width: 300px;
-            position: relative;
-        }
-
+        /* Preview container */
         .preview-container {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fff;
+            background: var(--bg-primary);
             padding: 20px;
             overflow: auto;
             position: relative;
@@ -281,12 +379,13 @@
         #preview {
             max-width: 100%;
             max-height: 100%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
             background: white;
             position: relative;
+            transition: transform 0.2s ease;
         }
 
-        /* Grid overlay */
+        /* Grid overlay - Enhanced visibility */
         .grid-overlay {
             position: absolute;
             top: 0;
@@ -295,10 +394,15 @@
             height: 100%;
             pointer-events: none;
             background-image: 
-                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
             background-size: 20px 20px;
+            opacity: 0.3;
             display: none;
+        }
+
+        .dark-theme .grid-overlay {
+            opacity: 0.5;
         }
 
         .grid-overlay.active {
@@ -309,8 +413,9 @@
         .viewbox-indicator {
             position: absolute;
             pointer-events: none;
-            border: 1px dashed rgba(0,0,0,0.3);
+            border: 2px dashed var(--primary-color);
             display: none;
+            z-index: 5;
         }
 
         .viewbox-indicator.active {
@@ -322,9 +427,10 @@
             position: absolute;
             pointer-events: none;
             border: 2px solid var(--primary-color);
-            background: rgba(0, 102, 204, 0.05);
+            background: var(--primary-light);
             z-index: 10;
             display: none;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
         }
 
         .selection-overlay.active {
@@ -342,39 +448,32 @@
             display: none;
             white-space: nowrap;
             z-index: 11;
+            border-radius: 2px;
+            box-shadow: var(--shadow-sm);
         }
 
         .selection-info.active {
             display: block;
         }
 
-        /* Selection highlight in editor */
-        .selection-highlight {
-            background: var(--selection-color);
-            border-left: 3px solid var(--primary-color);
-        }
-
         /* Footer */
         .footer {
-            background: var(--bg-light);
+            background: var(--bg-primary);
             padding: 6px 12px;
             border: 1px solid var(--border-color);
             border-radius: 0;
             font-size: 0.75em;
-            color: #666;
+            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
             min-height: 32px;
         }
 
-        .dark-theme .footer {
-            color: #aaa;
-        }
-
         .status {
             display: flex;
             gap: 15px;
+            align-items: center;
         }
 
         .status-item {
@@ -399,7 +498,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: var(--overlay-bg);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -410,14 +509,14 @@
         }
 
         .settings-content {
-            background: var(--bg-light);
+            background: var(--bg-primary);
             border-radius: 0;
             width: 90%;
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-shadow: var(--shadow-md);
         }
 
         .settings-header {
@@ -427,6 +526,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
 
         .settings-body {
@@ -440,8 +542,11 @@
         .settings-group h3 {
             margin-bottom: 10px;
             font-size: 1em;
-            color: var(--text-light);
+            color: var(--text-primary);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .setting-item {
@@ -457,45 +562,65 @@
         .setting-item input[type="number"] {
             padding: 4px 8px;
             border: 1px solid var(--border-color);
-            background: var(--bg-light);
-            color: var(--text-light);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             border-radius: 0;
+            min-width: 120px;
         }
 
         .setting-item input[type="checkbox"] {
             transform: scale(1.2);
+            accent-color: var(--primary-color);
         }
 
-        /* Theme-specific styles */
+        /* Theme preview */
         .theme-option {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px;
+            gap: 12px;
+            padding: 10px;
             border: 1px solid var(--border-color);
             margin-bottom: 8px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-primary);
         }
 
         .theme-option:hover {
-            background: var(--border-color);
+            background: var(--bg-tertiary);
+            border-color: var(--primary-color);
+        }
+
+        .theme-option.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
         }
 
         .theme-preview {
-            width: 40px;
-            height: 20px;
+            width: 48px;
+            height: 48px;
             border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .theme-preview.light { background: linear-gradient(to right, #fff 50%, #f5f5f5 50%); }
-        .theme-preview.dark { background: linear-gradient(to right, #2d2d2d 50%, #1e1e1e 50%); }
-        .theme-preview.monokai { background: linear-gradient(to right, #272822 50%, #1e1e1e 50%); }
+        .theme-preview.light { background: linear-gradient(135deg, #ffffff 50%, #f5f5f5 50%); }
+        .theme-preview.dark { background: linear-gradient(135deg, #2d2d2d 50%, #1e1e1e 50%); }
+        .theme-preview.monokai { background: linear-gradient(135deg, #272822 50%, #3e3d32 50%); }
+
+        .theme-preview span {
+            padding: 2px;
+            font-size: 8px;
+            color: var(--text-primary);
+        }
 
         /* Lucide icon base styles */
         .icon {
             width: 18px;
             height: 18px;
             stroke-width: 2;
+            color: currentColor;
         }
 
         .icon-sm {
@@ -508,15 +633,96 @@
             height: 24px;
         }
 
-        /* Status indicators */
+        /* Status badges */
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 4px;
             padding: 2px 8px;
-            background: var(--toolbar-bg);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             font-size: 0.85em;
+            color: var(--text-primary);
+            border-radius: 2px;
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        /* Quick actions panel */
+        .quick-actions {
+            position: fixed;
+            bottom: 50px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .quick-action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+
+        .quick-action-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary-hover);
+        }
+
+        .quick-action-btn i {
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
@@ -526,82 +732,50 @@
         <header class="header">
             <div class="logo-container">
                 <svg class="logo" viewBox="0 0 100 100">
-                    <rect x="10" y="10" width="80" height="80" fill="#0066cc" />
+                    <rect x="10" y="10" width="80" height="80" fill="var(--primary-color)" />
                     <circle cx="50" cy="50" r="30" fill="white" />
-                    <path d="M35,35 L65,65 M65,35 L35,65" stroke="#0066cc" stroke-width="8" />
+                    <path d="M35,35 L65,65 M65,35 L35,65" stroke="var(--primary-color)" stroke-width="8" />
                 </svg>
                 <span class="app-title">SVG RA Editor</span>
             </div>
             
             <div class="header-controls">
-                <button class="btn" id="loadExampleBtn">
+                <button class="btn" id="loadExampleBtn" title="Load Example SVG">
                     <i data-lucide="file-code-2" class="icon"></i>
-                    Example
+                    <span class="btn-text">Example</span>
                 </button>
-                <button class="btn btn-primary" id="updatePreviewBtn">
+                <button class="btn btn-primary" id="updatePreviewBtn" title="Update Preview">
                     <i data-lucide="refresh-cw" class="icon"></i>
-                    Update
+                    <span class="btn-text">Update</span>
                 </button>
-                <button class="btn" id="saveBtn">
+                <button class="btn" id="saveBtn" title="Save SVG">
                     <i data-lucide="save" class="icon"></i>
-                    Save
+                    <span class="btn-text">Save</span>
                 </button>
-                <button class="btn" id="settingsBtn">
+                <button class="btn" id="settingsBtn" title="Settings">
                     <i data-lucide="settings" class="icon"></i>
-                    Settings
+                    <span class="btn-text">Settings</span>
                 </button>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
+        <!-- Main Content with CSS Grid -->
+        <main class="main-content" id="mainContent">
             <!-- Editor Panel -->
             <section class="editor-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <i data-lucide="code-2" class="icon" style="margin-right: 6px;"></i>
+                        <i data-lucide="code-2" class="icon"></i>
                         SVG Editor
                     </h2>
-                    <div class="status-badge">
+                    <div class="status-badge" id="lineCount">
                         <i data-lucide="edit-3" class="icon-sm"></i>
-                        <span id="lineCount">Lines: 1</span>
+                        <span>Lines: 1</span>
                     </div>
                 </div>
                 
                 <!-- Tool Palette -->
-                <div class="tool-palette">
-                    <div class="tool-group">
-                        <button class="btn-icon" id="formatBtn" title="Format Code">
-                            <i data-lucide="indent" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="minifyBtn" title="Minify Code">
-                            <i data-lucide="minimize-2" class="icon"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <button class="btn-icon" id="copyBtn" title="Copy to Clipboard">
-                            <i data-lucide="copy" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="clearBtn" title="Clear Editor">
-                            <i data-lucide="trash-2" class="icon"></i>
-                        </button>
-                    </div>
-                    <div class="tool-group">
-                        <button class="btn-icon" id="undoBtn" title="Undo">
-                            <i data-lucide="undo-2" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="redoBtn" title="Redo">
-                            <i data-lucide="redo-2" class="icon"></i>
-                        </button>
-                    </div>
-                    <div class="tool-group">
-                        <button class="btn-icon" id="searchBtn" title="Find in Code">
-                            <i data-lucide="search" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="replaceBtn" title="Replace">
-                            <i data-lucide="replace" class="icon"></i>
-                        </button>
-                    </div>
-                </div>
+                <div class="tool-palette" id="editorToolPalette"></div>
                 
                 <div class="editor-container">
                     <textarea id="editor" placeholder="Enter your SVG code here..." spellcheck="false">&lt;svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"&gt;
@@ -616,7 +790,7 @@
             <section class="preview-panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <i data-lucide="eye" class="icon" style="margin-right: 6px;"></i>
+                        <i data-lucide="eye" class="icon"></i>
                         Live Preview
                     </h2>
                     <div class="status-badge" id="elementCount">
@@ -626,44 +800,7 @@
                 </div>
                 
                 <!-- Preview Tool Palette -->
-                <div class="tool-palette">
-                    <div class="tool-group">
-                        <button class="btn-icon" id="zoomInBtn" title="Zoom In">
-                            <i data-lucide="zoom-in" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="zoomOutBtn" title="Zoom Out">
-                            <i data-lucide="zoom-out" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="resetZoomBtn" title="Reset Zoom">
-                            <i data-lucide="maximize-2" class="icon"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <span class="status-badge" id="zoomDisplay">100%</span>
-                    </div>
-                    <div class="tool-group">
-                        <button class="btn-icon" id="toggleGridBtn" title="Toggle Grid">
-                            <i data-lucide="grid" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="toggleViewBoxBtn" title="Toggle ViewBox">
-                            <i data-lucide="frame" class="icon"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <button class="btn-icon" id="fitToScreenBtn" title="Fit to Screen">
-                            <i data-lucide="crop" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="centerViewBtn" title="Center View">
-                            <i data-lucide="move" class="icon"></i>
-                        </button>
-                    </div>
-                    <div class="tool-group">
-                        <button class="btn-icon" id="selectPointerBtn" title="Select Mode (Active)">
-                            <i data-lucide="mouse-pointer-2" class="icon"></i>
-                        </button>
-                        <button class="btn-icon" id="panModeBtn" title="Pan Mode">
-                            <i data-lucide="hand" class="icon"></i>
-                        </button>
-                    </div>
-                </div>
+                <div class="tool-palette" id="previewToolPalette"></div>
                 
                 <div class="preview-container" id="previewContainer">
                     <!-- Grid overlay -->
@@ -703,10 +840,13 @@
             </div>
             <div class="version">
                 <i data-lucide="code" class="icon-sm"></i>
-                v0.2.0 pre-alpha
+                v0.3.0 pre-alpha
             </div>
         </footer>
     </div>
+
+    <!-- Quick Actions (mobile friendly) -->
+    <div class="quick-actions" id="quickActions"></div>
 
     <!-- Settings Modal -->
     <div class="settings-modal" id="settingsModal">
@@ -720,92 +860,277 @@
                     <i data-lucide="x" class="icon"></i>
                 </button>
             </div>
-            <div class="settings-body">
-                <div class="settings-group">
-                    <h3>
-                        <i data-lucide="palette" class="icon-sm" style="margin-right: 6px;"></i>
-                        Theme
-                    </h3>
-                    <div class="theme-option" onclick="SVGEditor.setTheme('light')">
-                        <div class="theme-preview light"></div>
-                        <span>Light Theme</span>
-                    </div>
-                    <div class="theme-option" onclick="SVGEditor.setTheme('dark')">
-                        <div class="theme-preview dark"></div>
-                        <span>Dark Theme</span>
-                    </div>
-                    <div class="theme-option" onclick="SVGEditor.setTheme('monokai')">
-                        <div class="theme-preview monokai"></div>
-                        <span>Monokai Theme</span>
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h3>
-                        <i data-lucide="code-2" class="icon-sm" style="margin-right: 6px;"></i>
-                        Editor Settings
-                    </h3>
-                    <div class="setting-item">
-                        <span>Font Size</span>
-                        <select id="fontSize">
-                            <option value="12">12px</option>
-                            <option value="13" selected>13px</option>
-                            <option value="14">14px</option>
-                            <option value="15">15px</option>
-                            <option value="16">16px</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <span>Tab Size</span>
-                        <select id="tabSize">
-                            <option value="2">2 spaces</option>
-                            <option value="4" selected>4 spaces</option>
-                            <option value="8">8 spaces</option>
-                            <option value="tab">Tab character</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <span>Auto Update Preview</span>
-                        <input type="checkbox" id="autoUpdate" checked>
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h3>
-                        <i data-lucide="eye" class="icon-sm" style="margin-right: 6px;"></i>
-                        Preview Settings
-                    </h3>
-                    <div class="setting-item">
-                        <span>Show Grid</span>
-                        <input type="checkbox" id="showGrid">
-                    </div>
-                    <div class="setting-item">
-                        <span>Grid Size</span>
-                        <input type="number" id="gridSize" value="20" min="5" max="100">
-                    </div>
-                    <div class="setting-item">
-                        <span>Show ViewBox</span>
-                        <input type="checkbox" id="showViewBox">
-                    </div>
-                    <div class="setting-item">
-                        <span>Default Zoom</span>
-                        <select id="defaultZoom">
-                            <option value="100">100%</option>
-                            <option value="75">75%</option>
-                            <option value="50">50%</option>
-                            <option value="200">200%</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <div class="settings-body" id="settingsBody"></div>
         </div>
     </div>
+
+    <!-- Toast container for notifications -->
+    <div id="toastContainer"></div>
 
     <!-- Load Lucide from CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- Layout System and Components -->
     <script>
-        // SVG Editor Singleton
+        // Layout System - Responsive Grid Manager
+        const LayoutSystem = {
+            breakpoints: {
+                mobile: 768,
+                tablet: 1024,
+                desktop: 1280
+            },
+            
+            currentLayout: 'desktop',
+            
+            init() {
+                this.checkLayout();
+                window.addEventListener('resize', () => this.checkLayout());
+            },
+            
+            checkLayout() {
+                const width = window.innerWidth;
+                let newLayout = 'desktop';
+                
+                if (width < this.breakpoints.mobile) {
+                    newLayout = 'mobile';
+                } else if (width < this.breakpoints.tablet) {
+                    newLayout = 'tablet';
+                }
+                
+                if (newLayout !== this.currentLayout) {
+                    this.currentLayout = newLayout;
+                    this.applyLayout(newLayout);
+                    document.dispatchEvent(new CustomEvent('layoutchange', { detail: { layout: newLayout } }));
+                }
+            },
+            
+            applyLayout(layout) {
+                document.body.setAttribute('data-layout', layout);
+                
+                // Adjust main content grid
+                const mainContent = document.getElementById('mainContent');
+                if (layout === 'mobile') {
+                    mainContent.style.gridTemplateColumns = '1fr';
+                    mainContent.style.gridTemplateRows = '1fr 1fr';
+                } else {
+                    mainContent.style.gridTemplateColumns = '1fr 1fr';
+                    mainContent.style.gridTemplateRows = '1fr';
+                }
+            }
+        };
+
+        // Component Factory
+        const ComponentFactory = {
+            createButton(options) {
+                const { id, icon, text, title, className, onClick } = options;
+                const button = document.createElement('button');
+                button.id = id;
+                button.className = `btn ${className || ''}`;
+                button.title = title || text;
+                button.innerHTML = icon ? `<i data-lucide="${icon}" class="icon"></i>` : '';
+                if (text && !icon) button.innerHTML += text;
+                if (onClick) button.addEventListener('click', onClick);
+                return button;
+            },
+            
+            createToolGroup(buttons) {
+                const group = document.createElement('div');
+                group.className = 'tool-group';
+                buttons.forEach(btn => group.appendChild(btn));
+                return group;
+            },
+            
+            createSeparator() {
+                const sep = document.createElement('div');
+                sep.className = 'tool-separator';
+                return sep;
+            },
+            
+            createStatusBadge(icon, text) {
+                const badge = document.createElement('span');
+                badge.className = 'status-badge';
+                badge.innerHTML = `<i data-lucide="${icon}" class="icon-sm"></i><span>${text}</span>`;
+                return badge;
+            },
+            
+            createToast(message, type = 'info', duration = 3000) {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `
+                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="icon"></i>
+                    <span>${message}</span>
+                `;
+                
+                const container = document.getElementById('toastContainer');
+                container.appendChild(toast);
+                
+                if (window.lucide) lucide.createIcons();
+                
+                setTimeout(() => {
+                    toast.style.animation = 'slideUp 0.3s ease reverse';
+                    setTimeout(() => container.removeChild(toast), 300);
+                }, duration);
+            }
+        };
+
+        // UI Components
+        const UIComponents = {
+            editorTools: [
+                { id: 'formatBtn', icon: 'indent', title: 'Format Code', action: 'formatCode' },
+                { id: 'minifyBtn', icon: 'minimize-2', title: 'Minify Code', action: 'minifyCode' },
+                null, // separator
+                { id: 'copyBtn', icon: 'copy', title: 'Copy to Clipboard', action: 'copyCode' },
+                { id: 'clearBtn', icon: 'trash-2', title: 'Clear Editor', action: 'clearEditor' },
+                null,
+                { id: 'undoBtn', icon: 'undo-2', title: 'Undo', action: 'undo' },
+                { id: 'redoBtn', icon: 'redo-2', title: 'Redo', action: 'redo' }
+            ],
+            
+            previewTools: [
+                { id: 'zoomInBtn', icon: 'zoom-in', title: 'Zoom In', action: 'zoomIn' },
+                { id: 'zoomOutBtn', icon: 'zoom-out', title: 'Zoom Out', action: 'zoomOut' },
+                { id: 'resetZoomBtn', icon: 'maximize-2', title: 'Reset Zoom', action: 'resetZoom' },
+                null,
+                { id: 'toggleGridBtn', icon: 'grid', title: 'Toggle Grid', action: 'toggleGrid' },
+                { id: 'toggleViewBoxBtn', icon: 'frame', title: 'Toggle ViewBox', action: 'toggleViewBox' },
+                null,
+                { id: 'fitToScreenBtn', icon: 'crop', title: 'Fit to Screen', action: 'fitToScreen' },
+                { id: 'centerViewBtn', icon: 'move', title: 'Center View', action: 'centerView' }
+            ],
+            
+            quickActions: [
+                { id: 'quickSave', icon: 'save', title: 'Save', action: 'saveSVG' },
+                { id: 'quickUndo', icon: 'undo-2', title: 'Undo', action: 'undo' },
+                { id: 'quickRedo', icon: 'redo-2', title: 'Redo', action: 'redo' },
+                { id: 'quickZoomIn', icon: 'zoom-in', title: 'Zoom In', action: 'zoomIn' },
+                { id: 'quickZoomOut', icon: 'zoom-out', title: 'Zoom Out', action: 'zoomOut' }
+            ],
+            
+            renderToolPalette(containerId, tools) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                let currentGroup = [];
+                
+                tools.forEach(tool => {
+                    if (tool === null) {
+                        if (currentGroup.length > 0) {
+                            container.appendChild(ComponentFactory.createToolGroup(currentGroup));
+                            currentGroup = [];
+                        }
+                        container.appendChild(ComponentFactory.createSeparator());
+                    } else {
+                        const button = ComponentFactory.createButton({
+                            id: tool.id,
+                            icon: tool.icon,
+                            title: tool.title,
+                            className: 'btn-icon',
+                            onClick: () => SVGEditor[tool.action]()
+                        });
+                        currentGroup.push(button);
+                    }
+                });
+                
+                if (currentGroup.length > 0) {
+                    container.appendChild(ComponentFactory.createToolGroup(currentGroup));
+                }
+            },
+            
+            renderQuickActions() {
+                const container = document.getElementById('quickActions');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                this.quickActions.forEach(action => {
+                    const button = ComponentFactory.createButton({
+                        id: action.id,
+                        icon: action.icon,
+                        title: action.title,
+                        className: 'quick-action-btn',
+                        onClick: () => SVGEditor[action.action]()
+                    });
+                    container.appendChild(button);
+                });
+            },
+            
+            renderSettings() {
+                const settingsBody = document.getElementById('settingsBody');
+                if (!settingsBody) return;
+                
+                settingsBody.innerHTML = `
+                    <div class="settings-group">
+                        <h3><i data-lucide="palette" class="icon-sm"></i> Theme</h3>
+                        <div class="theme-option" onclick="SVGEditor.setTheme('light')">
+                            <div class="theme-preview light"></div>
+                            <span>Light Theme</span>
+                        </div>
+                        <div class="theme-option" onclick="SVGEditor.setTheme('dark')">
+                            <div class="theme-preview dark"></div>
+                            <span>Dark Theme</span>
+                        </div>
+                        <div class="theme-option" onclick="SVGEditor.setTheme('monokai')">
+                            <div class="theme-preview monokai"></div>
+                            <span>Monokai Theme</span>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h3><i data-lucide="code-2" class="icon-sm"></i> Editor Settings</h3>
+                        <div class="setting-item">
+                            <span>Font Size</span>
+                            <select id="fontSize">
+                                <option value="12">12px</option>
+                                <option value="13" selected>13px</option>
+                                <option value="14">14px</option>
+                                <option value="15">15px</option>
+                                <option value="16">16px</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <span>Tab Size</span>
+                            <select id="tabSize">
+                                <option value="2">2 spaces</option>
+                                <option value="4" selected>4 spaces</option>
+                                <option value="8">8 spaces</option>
+                                <option value="tab">Tab character</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <span>Auto Update Preview</span>
+                            <input type="checkbox" id="autoUpdate" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h3><i data-lucide="eye" class="icon-sm"></i> Preview Settings</h3>
+                        <div class="setting-item">
+                            <span>Show Grid</span>
+                            <input type="checkbox" id="showGrid">
+                        </div>
+                        <div class="setting-item">
+                            <span>Grid Size</span>
+                            <input type="number" id="gridSize" value="20" min="5" max="100">
+                        </div>
+                        <div class="setting-item">
+                            <span>Show ViewBox</span>
+                            <input type="checkbox" id="showViewBox">
+                        </div>
+                        <div class="setting-item">
+                            <span>Default Zoom</span>
+                            <select id="defaultZoom">
+                                <option value="100">100%</option>
+                                <option value="75">75%</option>
+                                <option value="50">50%</option>
+                                <option value="200">200%</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        // SVG Editor Core
         const SVGEditor = {
             // State
             zoomLevel: 100,
@@ -817,29 +1142,46 @@
             currentTheme: 'light',
             history: [],
             historyIndex: -1,
+            isProcessing: false,
             
             // Initialize
-            init() {
+            async init() {
                 // Initialize Lucide icons
                 if (window.lucide) {
                     lucide.createIcons();
                 }
                 
+                // Initialize layout system
+                LayoutSystem.init();
+                
+                // Render UI components
+                UIComponents.renderToolPalette('editorToolPalette', UIComponents.editorTools);
+                UIComponents.renderToolPalette('previewToolPalette', UIComponents.previewTools);
+                UIComponents.renderQuickActions();
+                UIComponents.renderSettings();
+                
+                // Initialize editor
                 this.updatePreview();
                 this.updateCounters();
                 this.loadSettings();
                 this.setupEventListeners();
                 this.initHistory();
+                
+                // Recreate icons after rendering
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
             },
             
             // Setup all event listeners
             setupEventListeners() {
                 // Editor events
                 const editor = document.getElementById('editor');
+                
                 editor.addEventListener('input', () => {
                     this.updateCounters();
-                    if (document.getElementById('autoUpdate').checked) {
-                        this.updatePreview();
+                    if (document.getElementById('autoUpdate')?.checked) {
+                        this.debounce(this.updatePreview, 300)();
                     }
                     this.pushToHistory();
                 });
@@ -863,23 +1205,16 @@
                     }
                 });
                 
-                editor.addEventListener('click', () => {
-                    this.updateCursorPosition();
-                });
+                editor.addEventListener('click', () => this.updateCursorPosition());
+                editor.addEventListener('keyup', () => this.updateCursorPosition());
                 
-                editor.addEventListener('keyup', () => {
-                    this.updateCursorPosition();
-                });
-                
-                // Preview container click handler (delegated)
+                // Preview container click handler
                 document.getElementById('previewContainer').addEventListener('click', (e) => {
-                    // Clear selection if clicking on container
                     if (e.target === e.currentTarget || e.target.id === 'preview') {
                         this.clearSelection();
                         return;
                     }
                     
-                    // Find the actual SVG element
                     let element = e.target;
                     while (element && element.parentElement && element.parentElement.id !== 'preview') {
                         element = element.parentElement;
@@ -893,38 +1228,29 @@
                     }
                 });
                 
-                // Tool buttons
-                document.getElementById('loadExampleBtn').addEventListener('click', () => this.loadExample());
-                document.getElementById('updatePreviewBtn').addEventListener('click', () => this.updatePreview());
-                document.getElementById('saveBtn').addEventListener('click', () => this.saveSVG());
+                // Settings buttons
                 document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
-                document.getElementById('formatBtn').addEventListener('click', () => this.formatCode());
-                document.getElementById('minifyBtn').addEventListener('click', () => this.minifyCode());
-                document.getElementById('copyBtn').addEventListener('click', () => this.copyCode());
-                document.getElementById('clearBtn').addEventListener('click', () => this.clearEditor());
-                document.getElementById('undoBtn').addEventListener('click', () => this.undo());
-                document.getElementById('redoBtn').addEventListener('click', () => this.redo());
-                document.getElementById('searchBtn').addEventListener('click', () => this.showSearch());
-                document.getElementById('replaceBtn').addEventListener('click', () => this.showReplace());
-                
-                // Preview controls
-                document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
-                document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
-                document.getElementById('resetZoomBtn').addEventListener('click', () => this.resetZoom());
-                document.getElementById('toggleGridBtn').addEventListener('click', () => this.toggleGrid());
-                document.getElementById('toggleViewBoxBtn').addEventListener('click', () => this.toggleViewBox());
-                document.getElementById('fitToScreenBtn').addEventListener('click', () => this.fitToScreen());
-                document.getElementById('centerViewBtn').addEventListener('click', () => this.centerView());
-                
-                // Settings modal
                 document.getElementById('closeSettingsBtn').addEventListener('click', () => this.closeSettings());
                 
                 // Settings changes
-                document.getElementById('fontSize').addEventListener('change', (e) => this.updateFontSize(e.target.value));
-                document.getElementById('tabSize').addEventListener('change', (e) => this.updateTabSize(e.target.value));
-                document.getElementById('showGrid').addEventListener('change', (e) => this.toggleGridSetting(e.target.checked));
-                document.getElementById('gridSize').addEventListener('change', (e) => this.updateGridSize(e.target.value));
-                document.getElementById('showViewBox').addEventListener('change', (e) => this.toggleViewBoxSetting(e.target.checked));
+                document.getElementById('fontSize')?.addEventListener('change', (e) => this.updateFontSize(e.target.value));
+                document.getElementById('tabSize')?.addEventListener('change', (e) => this.updateTabSize(e.target.value));
+                document.getElementById('showGrid')?.addEventListener('change', (e) => this.toggleGridSetting(e.target.checked));
+                document.getElementById('gridSize')?.addEventListener('change', (e) => this.updateGridSize(e.target.value));
+                document.getElementById('showViewBox')?.addEventListener('change', (e) => this.toggleViewBoxSetting(e.target.checked));
+                document.getElementById('defaultZoom')?.addEventListener('change', (e) => {
+                    this.zoomLevel = parseInt(e.target.value);
+                    this.applyZoom();
+                });
+            },
+            
+            // Debounce helper
+            debounce(func, wait) {
+                let timeout;
+                return () => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(func, wait);
+                };
             },
             
             // Handle tab key in editor
@@ -955,7 +1281,6 @@
                     this.history.push(currentValue);
                     this.historyIndex++;
                     
-                    // Limit history size
                     if (this.history.length > 50) {
                         this.history.shift();
                         this.historyIndex--;
@@ -969,6 +1294,7 @@
                     document.getElementById('editor').value = this.history[this.historyIndex];
                     this.updatePreview();
                     this.updateCounters();
+                    ComponentFactory.createToast('Undo successful', 'info');
                 }
             },
             
@@ -978,10 +1304,11 @@
                     document.getElementById('editor').value = this.history[this.historyIndex];
                     this.updatePreview();
                     this.updateCounters();
+                    ComponentFactory.createToast('Redo successful', 'info');
                 }
             },
             
-            // Update cursor position in footer
+            // Update cursor position
             updateCursorPosition() {
                 const editor = document.getElementById('editor');
                 const pos = editor.selectionStart;
@@ -995,80 +1322,66 @@
                     <span>Ln ${line}, Col ${col}</span>
                 `;
                 
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                if (window.lucide) lucide.createIcons();
             },
             
-            // Update preview safely
-            updatePreview() {
+            // Update preview
+            async updatePreview() {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+                
                 const editor = document.getElementById('editor');
                 const preview = document.getElementById('preview');
                 
                 try {
-                    // Store current selection
                     const currentSelection = this.selectedObjectId;
                     
-                    // Clear preview
                     preview.innerHTML = '';
                     
-                    // Parse and render SVG
                     const parser = new DOMParser();
                     const svgDoc = parser.parseFromString(editor.value, 'image/svg+xml');
                     
-                    // Check for parsing errors
                     const errorNode = svgDoc.querySelector('parsererror');
-                    if (errorNode) {
-                        throw new Error('Invalid SVG syntax');
-                    }
+                    if (errorNode) throw new Error('Invalid SVG syntax');
                     
-                    // Get SVG element
                     const svgElement = svgDoc.documentElement;
                     if (!svgElement || svgElement.tagName !== 'svg') {
                         throw new Error('No SVG element found');
                     }
                     
-                    // Clean and clone SVG
                     const cleanSvg = this.cleanSVG(svgElement);
                     preview.appendChild(cleanSvg);
                     
-                    // Extract elements
                     this.extractSVGElements();
                     
-                    // Update element count
                     document.getElementById('elementCount').innerHTML = `
                         <i data-lucide="layers" class="icon-sm"></i>
                         <span>Elements: ${this.svgElements.length}</span>
                     `;
                     
-                    // Restore selection if it still exists
                     if (currentSelection && this.svgElements.find(e => e.id === currentSelection)) {
                         this.selectObject(currentSelection);
                     }
                     
-                    // Update UI
                     this.applyZoom();
                     this.updateGrid();
                     this.updateViewBox();
                     
-                    // Recreate Lucide icons
-                    if (window.lucide) {
-                        lucide.createIcons();
-                    }
+                    if (window.lucide) lucide.createIcons();
                     
                 } catch (error) {
-                    preview.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
+                    preview.innerHTML = `<div style="color: var(--error-color); padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
                     console.error('Preview error:', error);
+                } finally {
+                    this.isProcessing = false;
                 }
             },
             
-            // Clean SVG element by removing any event listeners and cloning
+            // Clean SVG element
             cleanSVG(svgElement) {
-                // Clone the element to remove any event listeners
                 const cleanElement = svgElement.cloneNode(true);
-                
-                // Ensure all elements have IDs for selection
                 let idCounter = 0;
+                
                 const allElements = cleanElement.querySelectorAll('*');
                 allElements.forEach(element => {
                     if (!element.id) {
@@ -1079,20 +1392,18 @@
                 return cleanElement;
             },
             
-            // Extract SVG elements without recursion
+            // Extract SVG elements
             extractSVGElements() {
                 const preview = document.getElementById('preview');
                 this.svgElements = [];
                 this.svgElementData = {};
                 
-                if (!preview.firstChild || preview.firstChild.tagName !== 'svg') {
-                    return;
-                }
+                if (!preview.firstChild || preview.firstChild.tagName !== 'svg') return;
                 
                 const svgElement = preview.firstChild;
                 const allElements = svgElement.querySelectorAll('*');
                 
-                allElements.forEach((element, index) => {
+                allElements.forEach((element) => {
                     if (element.id) {
                         const rect = element.getBoundingClientRect();
                         const tag = element.tagName;
@@ -1112,18 +1423,43 @@
                 });
             },
             
-            // Object selection
+            // Select object
             selectObject(objectId) {
                 this.selectedObjectId = objectId;
-                
-                // Update object info
                 this.updateObjectInfo(objectId);
                 
                 if (objectId) {
-                    this.highlightElementInPreview(document.getElementById('preview').querySelector(`#${CSS.escape(objectId)}`));
+                    const element = document.getElementById('preview').querySelector(`#${CSS.escape(objectId)}`);
+                    this.highlightElementInPreview(element);
                 } else {
                     this.clearSelection();
                 }
+            },
+            
+            // Highlight element in preview
+            highlightElementInPreview(element) {
+                if (!element) return;
+                
+                const overlay = document.getElementById('selectionOverlay');
+                const info = document.getElementById('selectionInfo');
+                const container = document.querySelector('.preview-container');
+                
+                const rect = element.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                const left = rect.left - containerRect.left + container.scrollLeft;
+                const top = rect.top - containerRect.top + container.scrollTop;
+                
+                overlay.style.left = left + 'px';
+                overlay.style.top = top + 'px';
+                overlay.style.width = rect.width + 'px';
+                overlay.style.height = rect.height + 'px';
+                overlay.classList.add('active');
+                
+                info.style.left = (left + rect.width - 5) + 'px';
+                info.style.top = (top + 5) + 'px';
+                info.textContent = `${element.tagName} #${element.id}`;
+                info.classList.add('active');
             },
             
             // Scroll to element in editor
@@ -1133,13 +1469,9 @@
                 const elementIndex = code.indexOf(`id="${objectId}"`);
                 
                 if (elementIndex !== -1) {
-                    // Find the start of the element
                     let start = elementIndex;
-                    while (start > 0 && code[start] !== '<') {
-                        start--;
-                    }
+                    while (start > 0 && code[start] !== '<') start--;
                     
-                    // Find the end of the element
                     const tagName = this.svgElementData[objectId]?.tag?.toLowerCase();
                     let end = -1;
                     
@@ -1159,50 +1491,11 @@
                         editor.focus();
                         editor.setSelectionRange(start, end);
                         
-                        // Add highlight class
-                        this.addSelectionHighlight(start, end);
-                        
-                        // Scroll to element
                         const linesBefore = code.substring(0, start).split('\n').length - 1;
                         const lineHeight = parseInt(getComputedStyle(editor).lineHeight);
                         editor.scrollTop = linesBefore * lineHeight - 100;
                     }
                 }
-            },
-            
-            // Add visual highlight to editor selection
-            addSelectionHighlight(start, end) {
-                // This would be more sophisticated with a proper code editor
-                // For now, we just set the selection
-            },
-            
-            // Highlight element in preview
-            highlightElementInPreview(element) {
-                if (!element) return;
-                
-                const overlay = document.getElementById('selectionOverlay');
-                const info = document.getElementById('selectionInfo');
-                const container = document.querySelector('.preview-container');
-                
-                const rect = element.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                
-                // Calculate relative positions
-                const left = rect.left - containerRect.left + container.scrollLeft;
-                const top = rect.top - containerRect.top + container.scrollTop;
-                
-                // Position overlay
-                overlay.style.left = left + 'px';
-                overlay.style.top = top + 'px';
-                overlay.style.width = rect.width + 'px';
-                overlay.style.height = rect.height + 'px';
-                overlay.classList.add('active');
-                
-                // Position info
-                info.style.left = (left + rect.width - 5) + 'px';
-                info.style.top = (top + 5) + 'px';
-                info.textContent = `${element.tagName} #${element.id}`;
-                info.classList.add('active');
             },
             
             // Update object info in footer
@@ -1245,6 +1538,7 @@
             resetZoom() {
                 this.zoomLevel = 100;
                 this.applyZoom();
+                ComponentFactory.createToast('Zoom reset to 100%', 'info');
             },
             
             applyZoom() {
@@ -1252,7 +1546,9 @@
                 if (preview.firstChild) {
                     preview.firstChild.style.transform = `scale(${this.zoomLevel / 100})`;
                     preview.firstChild.style.transformOrigin = 'center center';
-                    document.getElementById('zoomDisplay').textContent = `${this.zoomLevel}%`;
+                    
+                    const zoomDisplay = document.getElementById('zoomDisplay');
+                    if (zoomDisplay) zoomDisplay.textContent = `${this.zoomLevel}%`;
                 }
             },
             
@@ -1260,28 +1556,30 @@
             updateCounters() {
                 const editor = document.getElementById('editor');
                 const charCount = document.getElementById('charCount');
+                const lineCount = document.getElementById('lineCount');
                 
                 charCount.innerHTML = `
                     <i data-lucide="text" class="icon-sm"></i>
                     <span>${editor.value.length} chars</span>
                 `;
                 
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                lineCount.innerHTML = `
+                    <i data-lucide="edit-3" class="icon-sm"></i>
+                    <span>Lines: ${editor.value.split('\n').length}</span>
+                `;
+                
+                if (window.lucide) lucide.createIcons();
             },
             
             // Grid functions
             toggleGrid() {
                 this.isGridVisible = !this.isGridVisible;
                 document.getElementById('gridOverlay').classList.toggle('active', this.isGridVisible);
-                const btn = document.getElementById('toggleGridBtn');
-                btn.innerHTML = this.isGridVisible ? 
-                    '<i data-lucide="grid" class="icon"></i>' : 
-                    '<i data-lucide="grid" class="icon"></i>';
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                document.getElementById('toggleGridBtn').classList.toggle('active', this.isGridVisible);
+                ComponentFactory.createToast(
+                    this.isGridVisible ? 'Grid enabled' : 'Grid disabled',
+                    'info'
+                );
             },
             
             toggleGridSetting(visible) {
@@ -1299,12 +1597,14 @@
             updateGridSize(size) {
                 localStorage.setItem('svgEditor_gridSize', size);
                 this.updateGrid();
+                ComponentFactory.createToast(`Grid size set to ${size}px`, 'success');
             },
             
             // ViewBox functions
             toggleViewBox() {
                 this.isViewBoxVisible = !this.isViewBoxVisible;
                 document.getElementById('viewboxIndicator').classList.toggle('active', this.isViewBoxVisible);
+                document.getElementById('toggleViewBoxBtn').classList.toggle('active', this.isViewBoxVisible);
             },
             
             toggleViewBoxSetting(visible) {
@@ -1321,10 +1621,8 @@
                     const viewBox = preview.getAttribute('viewBox');
                     if (viewBox) {
                         const [x, y, width, height] = viewBox.split(' ').map(Number);
-                        const svgRect = preview.getBoundingClientRect();
                         const containerRect = document.querySelector('.preview-container').getBoundingClientRect();
                         
-                        // Calculate scale
                         const scale = Math.min(
                             (containerRect.width - 40) / width,
                             (containerRect.height - 40) / height
@@ -1359,6 +1657,7 @@
                         
                         this.zoomLevel = Math.round(scale * 100);
                         this.applyZoom();
+                        ComponentFactory.createToast('Fit to screen', 'success');
                     }
                 }
             },
@@ -1369,6 +1668,7 @@
                     preview.firstChild.style.transformOrigin = 'center center';
                     preview.scrollLeft = preview.scrollWidth / 2 - preview.clientWidth / 2;
                     preview.scrollTop = preview.scrollHeight / 2 - preview.clientHeight / 2;
+                    ComponentFactory.createToast('View centered', 'info');
                 }
             },
             
@@ -1380,13 +1680,13 @@
                     this.updatePreview();
                     this.updateCounters();
                     this.pushToHistory();
+                    ComponentFactory.createToast('Code formatted', 'success');
                 } catch (e) {
-                    alert('Error formatting code: ' + e.message);
+                    ComponentFactory.createToast('Error formatting code: ' + e.message, 'error');
                 }
             },
             
             formatXML(xml) {
-                // Simple XML formatter - non-recursive
                 const lines = xml.split('\n');
                 let indent = 0;
                 const formatted = [];
@@ -1420,6 +1720,7 @@
                 this.updatePreview();
                 this.updateCounters();
                 this.pushToHistory();
+                ComponentFactory.createToast('Code minified', 'success');
             },
             
             copyCode() {
@@ -1427,18 +1728,16 @@
                 editor.select();
                 document.execCommand('copy');
                 
-                // Show feedback
                 const btn = document.getElementById('copyBtn');
                 const original = btn.innerHTML;
                 btn.innerHTML = '<i data-lucide="check" class="icon"></i>';
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                if (window.lucide) lucide.createIcons();
+                
+                ComponentFactory.createToast('Copied to clipboard', 'success');
+                
                 setTimeout(() => {
                     btn.innerHTML = original;
-                    if (window.lucide) {
-                        lucide.createIcons();
-                    }
+                    if (window.lucide) lucide.createIcons();
                 }, 1000);
             },
             
@@ -1448,36 +1747,7 @@
                     this.updatePreview();
                     this.updateCounters();
                     this.pushToHistory();
-                }
-            },
-            
-            showSearch() {
-                // Simple search prompt
-                const searchTerm = prompt('Enter text to search:');
-                if (searchTerm) {
-                    const editor = document.getElementById('editor');
-                    const index = editor.value.indexOf(searchTerm);
-                    if (index !== -1) {
-                        editor.focus();
-                        editor.setSelectionRange(index, index + searchTerm.length);
-                    } else {
-                        alert('Text not found');
-                    }
-                }
-            },
-            
-            showReplace() {
-                // Simple replace prompt
-                const searchTerm = prompt('Enter text to replace:');
-                if (searchTerm) {
-                    const replaceTerm = prompt('Enter replacement text:');
-                    if (replaceTerm !== null) {
-                        const editor = document.getElementById('editor');
-                        editor.value = editor.value.replace(new RegExp(searchTerm, 'g'), replaceTerm);
-                        this.updatePreview();
-                        this.updateCounters();
-                        this.pushToHistory();
-                    }
+                    ComponentFactory.createToast('Editor cleared', 'info');
                 }
             },
             
@@ -1492,6 +1762,7 @@
                 this.updatePreview();
                 this.updateCounters();
                 this.pushToHistory();
+                ComponentFactory.createToast('Example loaded', 'success');
             },
             
             saveSVG() {
@@ -1503,14 +1774,13 @@
                 a.download = 'drawing.svg';
                 a.click();
                 URL.revokeObjectURL(url);
+                ComponentFactory.createToast('SVG saved', 'success');
             },
             
             // Settings functions
             openSettings() {
                 document.getElementById('settingsModal').classList.add('active');
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                if (window.lucide) lucide.createIcons();
             },
             
             closeSettings() {
@@ -1523,28 +1793,25 @@
                 document.body.className = theme + '-theme';
                 localStorage.setItem('svgEditor_theme', theme);
                 
-                // Update editor colors
-                const editor = document.getElementById('editor');
-                if (theme === 'light') {
-                    editor.style.color = '#333';
-                    editor.style.backgroundColor = '#fff';
-                } else if (theme === 'dark') {
-                    editor.style.color = '#f0f0f0';
-                    editor.style.backgroundColor = '#1e1e1e';
-                } else if (theme === 'monokai') {
-                    editor.style.color = '#f8f8f2';
-                    editor.style.backgroundColor = '#272822';
-                }
+                // Update theme options UI
+                document.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.textContent.toLowerCase().includes(theme));
+                });
+                
+                if (window.lucide) lucide.createIcons();
+                ComponentFactory.createToast(`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme applied`, 'success');
             },
             
             updateFontSize(size) {
                 document.getElementById('editor').style.fontSize = size + 'px';
                 localStorage.setItem('svgEditor_fontSize', size);
+                ComponentFactory.createToast(`Font size set to ${size}px`, 'info');
             },
             
             updateTabSize(size) {
                 localStorage.setItem('svgEditor_tabSize', size);
                 localStorage.setItem('svgEditor_tabType', size === 'tab' ? 'tab' : 'spaces');
+                ComponentFactory.createToast(`Tab size updated`, 'info');
             },
             
             // Load settings
@@ -1587,10 +1854,7 @@
                 this.zoomLevel = parseInt(defaultZoom);
                 this.applyZoom();
                 
-                // Recreate icons
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
+                if (window.lucide) lucide.createIcons();
             },
             
             // Save settings
@@ -1603,6 +1867,8 @@
                 localStorage.setItem('svgEditor_gridSize', document.getElementById('gridSize').value);
                 localStorage.setItem('svgEditor_showViewBox', document.getElementById('showViewBox').checked);
                 localStorage.setItem('svgEditor_defaultZoom', document.getElementById('defaultZoom').value);
+                
+                ComponentFactory.createToast('Settings saved', 'success');
             }
         };
 
