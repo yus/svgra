@@ -1,0 +1,3 @@
+```txt
+lucide.min.js
+```
