@@ -121,16 +121,41 @@ const Preview = {
         });
     },
 
+    // Convert screen coordinates to SVG viewBox coordinates
+    screenToSVGCoords(x, y) {
+        if (!this.element.firstChild) return { x, y };
+        
+        const svg = this.element.firstChild;
+        const viewBox = Utils.getViewBox(svg);
+        const svgRect = svg.getBoundingClientRect();
+        
+        if (!viewBox) return { x, y };
+        
+        // Calculate scale factors
+        const scaleX = viewBox.width / svgRect.width;
+        const scaleY = viewBox.height / svgRect.height;
+        
+        // Convert screen coordinates to SVG coordinates
+        const svgX = viewBox.x + (x - svgRect.left) * scaleX;
+        const svgY = viewBox.y + (y - svgRect.top) * scaleY;
+        
+        return { x: svgX, y: svgY };
+    },
+
+    // Update element data with SVG coordinates
     updateElementData(id) {
         if (!id) return;
         const element = this.element.querySelector(`#${CSS.escape(id)}`);
         if (!element) return;
         
-        const rect = element.getBoundingClientRect();
+        const bbox = element.getBBox(); // Get SVG coordinates, not screen coordinates
+        const svg = this.element.firstChild;
+        const viewBox = Utils.getViewBox(svg);
+        
         this.elementData[id] = {
             tag: element.tagName,
-            position: { x: rect.x, y: rect.y },
-            size: { width: rect.width, height: rect.height }
+            position: { x: bbox.x, y: bbox.y },
+            size: { width: bbox.width, height: bbox.height }
         };
         
         this.updateFooterInfo(id);
@@ -158,6 +183,7 @@ const Preview = {
         this.updateFooterInfo(id);
     },
 
+    // Update footer with SVG coordinates
     updateFooterInfo(id) {
         const selectedObject = document.getElementById('selectedObject');
         const objectPosition = document.getElementById('objectPosition');
@@ -369,6 +395,7 @@ const Preview = {
         this.updateElementData(this.selectedId);
     },
 
+    // Fixed polygon handling
     handleMove(element, tag, dx, dy) {
         if (tag === 'circle') {
             const cx = parseFloat(element.getAttribute('cx') || '0') + dx;
@@ -381,75 +408,94 @@ const Preview = {
             element.setAttribute('x', x);
             element.setAttribute('y', y);
         } else if (tag === 'polygon' || tag === 'polyline') {
-            // For polygons, use transform translate as a simpler approach
-            const currentTransform = element.getAttribute('transform') || '';
-            const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
-            let tx = 0, ty = 0;
-            
-            if (translateMatch) {
-                const parts = translateMatch[1].split(',').map(parseFloat);
-                tx = parts[0] || 0;
-                ty = parts[1] || 0;
+            // For polygons, parse and transform each point
+            const pointsAttr = element.getAttribute('points');
+            if (pointsAttr) {
+                const points = pointsAttr.trim().split(/\s+/).map(p => {
+                    const coords = p.split(',').map(parseFloat);
+                    return { x: coords[0] + dx, y: coords[1] + dy };
+                });
+                
+                const newPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+                element.setAttribute('points', newPoints);
             }
-            
-            tx += dx;
-            ty += dy;
-            
-            // Remove old translate and add new one
-            const newTransform = currentTransform.replace(/translate\([^)]+\)/, '').trim();
-            element.setAttribute('transform', `translate(${tx},${ty}) ${newTransform}`.trim());
         }
     },
 
-    handleScale(element, tag, dx, dy) {
-        const scaleX = 1 + dx / 100;
-        const scaleY = 1 + dy / 100;
+    // Fixed scaling for circles
+    handleScale(element, tag, dx, dy, handleType) {
+        const bbox = element.getBBox();
         
         if (tag === 'circle') {
-            const r = parseFloat(element.getAttribute('r') || '40');
-            const scale = Math.max(0.1, this.dragMode === 'scale-x' ? scaleX : 
-                                        this.dragMode === 'scale-y' ? scaleY : 
-                                        Math.min(scaleX, scaleY));
-            element.setAttribute('r', r * scale);
-        } else if (tag === 'rect' || tag === 'text') {
-            const width = parseFloat(element.getAttribute('width') || '100');
-            const height = parseFloat(element.getAttribute('height') || '100');
+            const cx = parseFloat(element.getAttribute('cx') || bbox.x + bbox.width/2);
+            const cy = parseFloat(element.getAttribute('cy') || bbox.y + bbox.height/2);
+            const r = parseFloat(element.getAttribute('r') || bbox.width/2);
             
-            if (this.dragMode === 'scale-x' || this.dragMode === 'scale') {
-                element.setAttribute('width', Math.max(1, width * (1 + dx / 100)));
+            // Calculate scale based on handle position
+            let scale = 1 + (dx + dy) / 200; // More controlled scaling
+            
+            // Ensure minimum size
+            const newR = Math.max(5, r * scale);
+            element.setAttribute('r', newR);
+            
+        } else if (tag === 'rect' || tag === 'text') {
+            const x = parseFloat(element.getAttribute('x') || bbox.x);
+            const y = parseFloat(element.getAttribute('y') || bbox.y);
+            const width = parseFloat(element.getAttribute('width') || bbox.width);
+            const height = parseFloat(element.getAttribute('height') || bbox.height);
+            
+            if (handleType.includes('scale-x') || handleType === 'scale') {
+                const newWidth = Math.max(5, width * (1 + dx / 100));
+                element.setAttribute('width', newWidth);
             }
-            if (this.dragMode === 'scale-y' || this.dragMode === 'scale') {
-                element.setAttribute('height', Math.max(1, height * (1 + dy / 100)));
+            if (handleType.includes('scale-y') || handleType === 'scale') {
+                const newHeight = Math.max(5, height * (1 + dy / 100));
+                element.setAttribute('height', newHeight);
             }
         }
     },
 
+    // Fixed rotation handler
     handleRotate(element, dx, dy) {
+        const bbox = element.getBBox();
         const center = {
-            x: parseFloat(element.getAttribute('x') || element.getAttribute('cx') || '50'),
-            y: parseFloat(element.getAttribute('y') || element.getAttribute('cy') || '50')
+            x: bbox.x + bbox.width / 2,
+            y: bbox.y + bbox.height / 2
         };
         
-        // Calculate rotation angle based on mouse movement
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        // Get current rotation
         const currentTransform = element.getAttribute('transform') || '';
-        const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
+        const rotateMatch = currentTransform.match(/rotate\(([^,)]+)(?:,([^,)]+)(?:,([^,)]+))?\)/);
         let currentRotate = 0;
+        let rotateX = center.x;
+        let rotateY = center.y;
         
         if (rotateMatch) {
             currentRotate = parseFloat(rotateMatch[1]);
+            if (rotateMatch[2]) rotateX = parseFloat(rotateMatch[2]);
+            if (rotateMatch[3]) rotateY = parseFloat(rotateMatch[3]);
         }
         
+        // Calculate rotation angle based on mouse movement (more controlled)
+        const angle = Math.atan2(dy, dx) * 10; // Reduced sensitivity
+        
+        // Remove old rotation and add new one
+        let newTransform = currentTransform.replace(/rotate\([^)]+\)/, '').trim();
         const newRotate = currentRotate + angle;
         
-        // Remove old rotate and add new one
-        const newTransform = currentTransform.replace(/rotate\([^)]+\)/, '').trim();
-        element.setAttribute('transform', `rotate(${newRotate}) ${newTransform}`.trim());
+        // Keep rotation within 0-360
+        const finalRotate = ((newRotate % 360) + 360) % 360;
+        
+        // Add rotation with explicit center point for stability
+        element.setAttribute('transform', 
+            `rotate(${finalRotate.toFixed(1)} ${rotateX} ${rotateY}) ${newTransform}`.trim());
         
         // Update preview line
         if (this.previewLine) {
             const pos = Utils.getElementPosition(element, this.container);
-            this.previewLine.style.transform = `rotate(${newRotate}deg)`;
+            this.previewLine.style.left = pos.left + pos.width/2 + 'px';
+            this.previewLine.style.top = pos.top + pos.height/2 + 'px';
+            this.previewLine.style.transform = `rotate(${finalRotate}deg)`;
         }
     },
 
@@ -505,6 +551,16 @@ const Preview = {
             this.element.scrollLeft = this.element.scrollWidth / 2 - this.element.clientWidth / 2;
             this.element.scrollTop = this.element.scrollHeight / 2 - this.element.clientHeight / 2;
             Toast.info('View centered');
+        }
+    },
+
+    // Add method to ensure SVG has proper viewBox
+    ensureViewBox() {
+        const svg = this.element.firstChild;
+        if (svg && svg.tagName === 'svg' && !svg.getAttribute('viewBox')) {
+            const width = parseFloat(svg.getAttribute('width') || '300');
+            const height = parseFloat(svg.getAttribute('height') || '150');
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         }
     }
 };
