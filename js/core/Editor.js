@@ -6,9 +6,11 @@ const Editor = {
     historyIndex: -1,
     
     init() {
+        if (!this.element) return;
+        
         this.element.addEventListener('input', () => {
             App.updateCounters();
-            if (Settings.getAutoUpdate()) {
+            if (document.getElementById('autoUpdate')?.checked) {
                 App.updatePreview();
             }
             this.pushToHistory();
@@ -22,12 +24,14 @@ const Editor = {
     },
 
     getValue() {
-        return this.element.value;
+        return this.element ? this.element.value : '';
     },
 
     setValue(value) {
-        this.element.value = value;
-        this.pushToHistory();
+        if (this.element) {
+            this.element.value = value;
+            this.pushToHistory();
+        }
     },
 
     handleKeyDown(e) {
@@ -46,6 +50,14 @@ const Editor = {
         if (e.ctrlKey && e.key === 'y') {
             e.preventDefault();
             this.redo();
+        }
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            this.format();
+        }
+        if (e.ctrlKey && e.key === 'm') {
+            e.preventDefault();
+            this.minify();
         }
     },
 
@@ -67,6 +79,7 @@ const Editor = {
     },
 
     pushToHistory() {
+        if (!this.element) return;
         const currentValue = this.element.value;
         if (this.history[this.historyIndex] !== currentValue) {
             this.history = this.history.slice(0, this.historyIndex + 1);
@@ -100,9 +113,11 @@ const Editor = {
         }
     },
 
+    // FIXED: Format function was missing!
     format() {
         try {
-            this.element.value = Utils.formatXML(this.element.value);
+            const formatted = Utils.formatXML(this.element.value);
+            this.element.value = formatted;
             App.updatePreview();
             App.updateCounters();
             this.pushToHistory();
@@ -112,12 +127,18 @@ const Editor = {
         }
     },
 
+    // FIXED: Minify function was missing!
     minify() {
-        this.element.value = Utils.minifyXML(this.element.value);
-        App.updatePreview();
-        App.updateCounters();
-        this.pushToHistory();
-        Toast.success('Code minified');
+        try {
+            const minified = Utils.minifyXML(this.element.value);
+            this.element.value = minified;
+            App.updatePreview();
+            App.updateCounters();
+            this.pushToHistory();
+            Toast.success('Code minified');
+        } catch (e) {
+            Toast.error('Error minifying code: ' + e.message);
+        }
     },
 
     copy() {
