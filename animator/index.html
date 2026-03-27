@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Анимация мяча: отскоки с тенью</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* предотвращает выделение при кликах */
+        }
+
+        body {
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        /* контейнер для центрирования холста и создания мягкого внешнего вида */
+        .canvas-container {
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            padding: 10px;
+            display: inline-block;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            cursor: pointer;
+        }
+
+        /* небольшая подпись для атмосферы */
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #aaa;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 700px) {
+            .canvas-container {
+                padding: 5px;
+            }
+            .info {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div style="display: flex; flex-direction: column; align-items: center;">
+    <div class="canvas-container">
+        <canvas id="ballCanvas" width="900" height="500" style="width: 100%; height: auto; max-width: 900px; aspect-ratio: 900 / 500"></canvas>
+    </div>
+    <div class="info">⚽ белый мяч | динамическая тень | затухающие отскоки → остановка в центре</div>
+</div>
+
+<script>
+    (function() {
+        // --- ЭЛЕМЕНТЫ И НАСТРОЙКИ СЦЕНЫ ---
+        const canvas = document.getElementById('ballCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Размеры канваса (фиксированные 900x500, как в атрибутах)
+        const W = 900;
+        const H = 500;
+        canvas.width = W;
+        canvas.height = H;
+
+        // --- ПАРАМЕТРЫ МЯЧА И ФИЗИКИ ---
+        const BALL_RADIUS = 28;          // радиус мяча (пикселей) — достаточно крупный для выразительности
+        const GRAVITY = 0.65;            // сила гравитации (пикс/кадр^2)
+        const BOUNCE_DAMPING = 0.82;      // упругость при отскоке (потеря скорости)
+        const GROUND_Y = H - 24;          // положение "пола" (чтобы мяч не уходил за край, визуально приятный отступ снизу)
+
+        // --- ГРАНИЦЫ ДВИЖЕНИЯ ПО X ---
+        // Старт: левая часть кадра с небольшим отступом от края
+        const START_X = BALL_RADIUS + 18;
+        // Финиш (центр кадра): примерно середина по ширине
+        const TARGET_X = W / 2;
+
+        // --- КОЭФФИЦИЕНТ ЗАТУХАНИЯ ГОРИЗОНТАЛЬНОГО ДВИЖЕНИЯ ---
+        // Мяч движется слева направо, постепенно теряя горизонтальную скорость, чтобы плавно остановиться в центре.
+        // Используем линейное замедление с небольшим трением.
+        const HORIZONTAL_FRICTION = 0.988;   // плавное торможение
+        
+        // --- СОСТОЯНИЕ АНИМАЦИИ ---
+        let posX = START_X;                  // текущая X координата центра мяча
+        let posY = GROUND_Y - BALL_RADIUS;   // начальная Y: чтобы мяч лежал на полу? нет — для реализма он начнёт падать сверху, но по сценарию "появляется слева и падает".
+        // Для эффекта падения с высоты: изначально поднимем мяч на некоторую высоту, чтобы первый отскок был выразительным.
+        // Но по описанию: "появляется в кадре слева направо, падая на пол отскакивает несколько раз". Значит стартовая позиция Y — над полом.
+        let velY = 0;                        // вертикальная скорость
+        let velX = 4.2;                      // начальная горизонтальная скорость (движение вправо, достаточное чтобы пересечь экран к центру)
+        
+        let isAnimating = true;              // флаг активности анимации
+        let animationFrameId = null;
+        
+        // Дополнительный контроль: останавливаем анимацию, когда мяч почти неподвижен и находится в целевом X
+        let stopTimer = null;                // не обязателен, проверяем по условиям
+        
+        // --- ПАРАМЕТРЫ ТЕНИ (динамическая тень на полу) ---
+        // Тень будет эллипсом, который сжимается/растягивается в зависимости от высоты мяча.
+        // Чем выше мяч — тем тень меньше и размытее, чем ближе к полу — тем чётче и шире.
+        
+        // --- ФУНКЦИЯ ОТРИСОВКИ: МЯЧ + ОБЪЕМНАЯ ТЕНЬ (shading) + ТЕНЬ НА ПОЛУ (динамическая)---
+        function drawBallWithShadows(x, y, radius) {
+            // 1. ДИНАМИЧЕСКАЯ ТЕНЬ НА ПОВЕРХНОСТИ (под мячом, как отражение на полу)
+            // Вычисляем фактор высоты: y = вертикальная координата центра, пол на GROUND_Y - radius (касание)
+            const groundTouchY = GROUND_Y - radius;
+            // Высота над полом: расстояние от низа мяча до пола
+            const heightAboveGround = Math.max(0, (y + radius) - (GROUND_Y));
+            // Нормализованная высота: 0 = на полу, 1 = максимальная высота падения (но ограничим)
+            // Максимальная высота, которую мяч может достичь ~ 200-250px, для плавности используем clamp.
+            let t = Math.min(1, heightAboveGround / 130); // при высоте 130px тень минимальна
+            // Размер тени: от 1.1 * radius (когда на полу) до 0.55 * radius (когда высоко)
+            const shadowScale = 0.55 + (1 - t) * 0.65;  // 1.2 при t=0 (на полу) -> 0.55 при t=1
+            const shadowWidth = radius * shadowScale * 1.2;
+            const shadowHeight = radius * (0.35 + (1 - t) * 0.45);
+            
+            // Прозрачность тени: на полу темнее, в воздухе светлее и размыто
+            const shadowAlpha = 0.28 + (1 - t) * 0.28;  // от 0.56 (на полу) до 0.28 в воздухе
+            
+            // Координата тени (основание под мячом, чуть смещена по направлению света — условно сверху-слева)
+            const shadowOffsetX = 4;
+            const shadowX = x - shadowWidth/2 + shadowOffsetX * (1 - t);
+            const shadowY = GROUND_Y - shadowHeight/2 + 3;
+            
+            // Рисуем эллиптическую тень на "полу"
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(shadowX + shadowWidth/2, shadowY + shadowHeight/2, shadowWidth/2, shadowHeight/2, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha * 0.7})`;
+            ctx.fill();
+            
+            // Добавим дополнительное размытие за счет второго слоя (мягкая тень)
+            ctx.beginPath();
+            ctx.ellipse(shadowX + shadowWidth/2, shadowY + shadowHeight/2, shadowWidth/2.4, shadowHeight/2.2, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha * 0.4})`;
+            ctx.fill();
+            ctx.restore();
+            
+            // 2. РИСУЕМ САМ МЯЧ (белый с объемными градиентами, чтобы чувствовалась форма)
+            ctx.save();
+            ctx.shadowColor = "rgba(0,0,0,0)"; // убираем тень от самого мяча, чтобы не мешать, но создадим внутренний объем
+            
+            // Основной градиент: свет слева-сверху, тень справа-снизу (объем)
+            const grad = ctx.createRadialGradient(x - radius*0.28, y - radius*0.28, radius*0.15, x, y, radius*0.9);
+            grad.addColorStop(0, '#f9f9ff');
+            grad.addColorStop(0.45, '#f0f0f5');
+            grad.addColorStop(0.7, '#e2e2ea');
+            grad.addColorStop(1, '#d4d4df');
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            
+            // Блик (бликующий световой акцент) для объема
+            ctx.beginPath();
+            ctx.arc(x - radius*0.25, y - radius*0.25, radius*0.22, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.fill();
+            
+            // Мягкие тени на самом мяче (рефлексы от поверхности)
+            ctx.beginPath();
+            ctx.arc(x + radius*0.32, y + radius*0.28, radius*0.28, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(100, 100, 110, 0.12)';
+            ctx.fill();
+            
+            // Добавим легкую текстуру — имитация шва или бликов (опционально)
+            ctx.beginPath();
+            ctx.ellipse(x, y, radius*0.65, radius*0.45, 0.3, 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(130, 130, 150, 0.18)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.ellipse(x, y, radius*0.48, radius*0.35, -0.2, 0, Math.PI*2);
+            ctx.stroke();
+            
+            // Добавим капельку глубины — маленькая внутренняя тень внизу
+            ctx.beginPath();
+            ctx.arc(x + radius*0.2, y + radius*0.35, radius*0.12, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(70, 70, 85, 0.2)';
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // 3. ДОПОЛНИТЕЛЬНАЯ ВНЕШНЯЯ ЛЕГКАЯ ТЕНЬ (чтобы мяч отделялся от фона) — очень деликатная
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 4;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,245,0)'; // прозрачная заливка, только тень
+            ctx.fill();
+            ctx.restore();
+            
+            // Небольшой контур, чтобы подчеркнуть белый мяч на белом фоне (легкая серая кайма)
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(180, 180, 190, 0.45)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+        }
+        
+        // --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ОТРИСОВКИ ПОЛА (мягкая направляющая, чтобы визуально ощущать поверхность)---
+        function drawGroundHint() {
+            ctx.save();
+            // Легкая линия пола с мягким градиентом
+            const gradient = ctx.createLinearGradient(0, GROUND_Y - 6, 0, GROUND_Y + 8);
+            gradient.addColorStop(0, 'rgba(210, 210, 225, 0.25)');
+            gradient.addColorStop(0.7, 'rgba(180, 180, 200, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, GROUND_Y - 4, W, 8);
+            
+            // Тонкая линия, обозначающая поверхность
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(W, GROUND_Y);
+            ctx.strokeStyle = 'rgba(150, 150, 170, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Небольшие рефлексы на "полу" для атмосферы
+            for (let i = 0; i < 12; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * 80 + 12, GROUND_Y - 2);
+                ctx.lineTo(i * 80 + 35, GROUND_Y - 2);
+                ctx.strokeStyle = `rgba(200,200,220,0.2)`;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // --- ОСНОВНАЯ ЛОГИКА ОБНОВЛЕНИЯ ФИЗИКИ ---
+        function updatePhysics() {
+            if (!isAnimating) return;
+            
+            // 1. Вертикальное движение (гравитация и отскоки)
+            velY += GRAVITY;
+            posY += velY;
+            
+            // Проверка столкновения с полом (нижняя точка мяча касается пола)
+            const ballBottom = posY + BALL_RADIUS;
+            if (ballBottom >= GROUND_Y) {
+                // Корректируем позицию, чтобы мяч оказался ровно на полу
+                posY = GROUND_Y - BALL_RADIUS;
+                // Отскок: меняем вертикальную скорость с учётом затухания
+                velY = -velY * BOUNCE_DAMPING;
+                
+                // Дополнительно: если скорость после отскока очень мала и мяч почти на полу, останавливаем вертикальное движение
+                if (Math.abs(velY) < 0.65 && (GROUND_Y - posY - BALL_RADIUS) < 0.8) {
+                    velY = 0;
+                    posY = GROUND_Y - BALL_RADIUS;
+                }
+            }
+            
+            // Небольшая защита от проваливания под пол (на случай высокой скорости)
+            if (posY + BALL_RADIUS > GROUND_Y) {
+                posY = GROUND_Y - BALL_RADIUS;
+                if (Math.abs(velY) < 1.2) velY = 0;
+            }
+            
+            // Ограничение сверху (не даёт улететь выше крыши, но гравитация сама всё вернет)
+            if (posY - BALL_RADIUS < 0) {
+                posY = BALL_RADIUS;
+                if (velY < 0) velY = -velY * 0.5; // легкое отражение от потолка (необязательно, но делает анимацию корректной)
+            }
+            
+            // 2. Горизонтальное движение: от START_X к TARGET_X с затуханием
+            // Сначала двигаем вправо с текущей скоростью
+            posX += velX;
+            
+            // Горизонтальное трение: постепенно замедляем движение, чтобы остановиться в центре
+            velX *= HORIZONTAL_FRICTION;
+            
+            // Если горизонтальная скорость становится очень маленькой и мяч близок к целевому X, принудительно фиксируем
+            const dxToTarget = Math.abs(posX - TARGET_X);
+            if (Math.abs(velX) < 0.08 && dxToTarget < 3.5) {
+                posX = TARGET_X;
+                velX = 0;
+            }
+            
+            // Дополнительно, если мяч перелетел центр (по инерции) — мягко подтягиваем, но физика трения не даст уйти далеко
+            // Но чтобы не уходил за пределы центра, если скорость почти нулевая и он чуть правее, подтягиваем к центру
+            if (Math.abs(velX) < 0.12 && dxToTarget > 0.5 && dxToTarget < 15) {
+                // плавная коррекция
+                if (posX < TARGET_X) posX += 0.25;
+                if (posX > TARGET_X) posX -= 0.25;
+            }
+            
+            // Границы по X: мяч не должен выходить за пределы экрана (для эстетики)
+            if (posX - BALL_RADIUS < 5) {
+                posX = BALL_RADIUS + 5;
+                if (velX < 0) velX = -velX * 0.3;
+            }
+            if (posX + BALL_RADIUS > W - 5) {
+                posX = W - BALL_RADIUS - 5;
+                if (velX > 0) velX = -velX * 0.3;
+            }
+            
+            // --- УСЛОВИЯ ОСТАНОВКИ АНИМАЦИИ ---
+            // 1. Вертикаль: скорость почти нулевая и мяч на полу (погрешность)
+            const isVerticallyStable = (Math.abs(velY) < 0.2 && posY + BALL_RADIUS >= GROUND_Y - 0.5);
+            // 2. Горизонталь: скорость близка к нулю и позиция примерно в центре
+            const isHorizontallyStable = (Math.abs(velX) < 0.08 && Math.abs(posX - TARGET_X) < 3.2);
+            
+            // Дополнительное условие: также прошло несколько отскоков (по факту затухания хватит) и мяч не движется.
+            // Останавливаем анимацию, когда мяч лежит на полу и стоит на месте в центре.
+            if (isVerticallyStable && isHorizontallyStable && isAnimating) {
+                // Финальная фиксация параметров
+                posX = TARGET_X;
+                posY = GROUND_Y - BALL_RADIUS;
+                velX = 0;
+                velY = 0;
+                isAnimating = false;
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                // финальный перерисовать один раз, чтобы убедиться в идеальном положении
+                drawScene();
+                return;
+            }
+        }
+        
+        // --- ОТРИСОВКА ВСЕЙ СЦЕНЫ ---
+        function drawScene() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, W, H);
+            
+            // Рисуем пол (легкую референцию)
+            drawGroundHint();
+            
+            // Рисуем мяч со всеми тенями (динамическая тень от высоты и объемный блик)
+            drawBallWithShadows(posX, posY, BALL_RADIUS);
+            
+            // Добавим легкий градиентный фон для объема (необязательно) — просто белая атмосфера
+            // Ничего лишнего, но создаём ощущение глубины: очень тонкий вертикальный градиент
+            ctx.save();
+            ctx.globalCompositeOperation = 'overlay';
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, 'rgba(245, 248, 255, 0.2)');
+            bgGrad.addColorStop(1, 'rgba(235, 240, 250, 0.1)');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+        }
+        
+        // --- ЦИКЛ АНИМАЦИИ ---
+        let lastTimestamp = 0;
+        function animate() {
+            if (!isAnimating) return;
+            
+            updatePhysics();      // обновляем физику (позиции и скорости)
+            drawScene();          // перерисовываем
+            
+            animationFrameId = requestAnimationFrame(animate);
+        }
+        
+        // --- ИНИЦИАЛИЗАЦИЯ НАЧАЛЬНЫХ ПАРАМЕТРОВ С ЭФФЕКТНЫМ ПАДЕНИЕМ ---
+        function initAndStart() {
+            // Начальное положение: слева (START_X) и на небольшой высоте, чтобы первый отскок выглядел как падение.
+            posX = START_X;
+            // Начальная высота — подбрасываем мяч для красивого падения (около 110px над полом)
+            const initHeight = 110;
+            posY = GROUND_Y - BALL_RADIUS - initHeight;
+            velY = 1.2;           // лёгкое начальное ускорение вниз для падения
+            velX = 4.35;           // энергичное движение вправо, чтобы дойти до центра за несколько отскоков
+            isAnimating = true;
+            
+            // Отменяем предыдущий цикл, если был
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            // Перерисовываем стартовый кадр
+            drawScene();
+            // Запускаем анимацию
+            animationFrameId = requestAnimationFrame(animate);
+        }
+        
+        // Опционально: перезапуск по клику (для удобства просмотра), но не обязателен, однако добавим для интерактива
+        function restartAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            initAndStart();
+        }
+        
+        // Добавим возможность перезапуска по двойному клику или клику, но без навязчивости (легкая кнопка рестарт)
+        // Создадим прозрачную кнопку поверх? но лучше добавить текстовую ссылку под canvas.
+        const infoDiv = document.querySelector('.info');
+        if (infoDiv) {
+            const restartBtn = document.createElement('span');
+            restartBtn.textContent = ' 🔄 повторить';
+            restartBtn.style.cursor = 'pointer';
+            restartBtn.style.marginLeft = '18px';
+            restartBtn.style.fontWeight = '500';
+            restartBtn.style.color = '#888';
+            restartBtn.style.background = '#f0f2f5';
+            restartBtn.style.padding = '4px 12px';
+            restartBtn.style.borderRadius = '40px';
+            restartBtn.style.fontSize = '0.75rem';
+            restartBtn.style.transition = '0.2s';
+            restartBtn.onmouseover = () => { restartBtn.style.background = '#e4e7ec'; restartBtn.style.color = '#2c3e66'; };
+            restartBtn.onmouseout = () => { restartBtn.style.background = '#f0f2f5'; restartBtn.style.color = '#888'; };
+            restartBtn.onclick = (e) => {
+                e.stopPropagation();
+                restartAnimation();
+            };
+            infoDiv.appendChild(restartBtn);
+        }
+        
+        // Старт!
+        initAndStart();
+        
+        // Адаптивность под ресайз не требуется, canvas фикс. Но если пользователь меняет масштаб — всё корректно
+        window.addEventListener('resize', () => {
+            drawScene(); // просто перерисовка без изменения физики
+        });
+    })();
+</script>
+</body>
+</html>
