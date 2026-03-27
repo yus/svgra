@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SVGRA_ANIM // 3D_PROJ</title>
+    <style>
+        /* MICROFONT — Chicago/System condensed, pixel perfect */
+        @font-face {
+            font-family: 'ChicagoMicro';
+            src: url('https://raw.githubusercontent.com/yusdesign/cyroglyph/master/assets/fonts/cyroglyph.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #fef5ea;
+            font-family: 'ChicagoMicro', 'Courier New', monospace;
+            font-size: 9px;
+            -webkit-text-size-adjust: none;
+            text-size-adjust: none;
+            font-smoothing: none;
+            -webkit-font-smoothing: none;
+            letter-spacing: -0.2px;
+        }
+        
+        /* force all text to micro condensed */
+        body, button, .menu-btn, .dropdown, .modal-pixel, .param-row, .value-badge, .info-line {
+            font-size: 9px;
+            line-height: 1.15;
+            font-family: 'ChicagoMicro', monospace;
+            text-transform: uppercase;
+        }
+        
+        /* TOP MENU — CHICAGO STYLE, no gaps, hard edges */
+        .top-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background: #1a1814;
+            border-bottom: 1px solid #5f4e38;
+            padding: 4px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2px;
+            flex-wrap: nowrap;
+        }
+        
+        .menu-left {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+        
+        /* micro buttons — no rounding, compact */
+        .micro-btn {
+            background: #26221c;
+            border: 1px solid #6b583e;
+            color: #eedbbc;
+            padding: 3px 6px;
+            cursor: pointer;
+            font-size: 9px;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: -0.2px;
+            transition: none;
+            white-space: nowrap;
+        }
+        
+        .micro-btn:hover {
+            background: #4e3c28;
+            border-color: #ba9668;
+            color: #fff5e5;
+        }
+        
+        .logo-micro {
+            background: #0f0d09;
+            border: 1px solid #5f4b30;
+            padding: 3px 6px;
+            color: #e7cfaa;
+            font-size: 9px;
+            letter-spacing: -0.2px;
+        }
+        
+        /* DROPDOWN — ultracompact, sharp, no gaps */
+        .dropdown-micro {
+            position: absolute;
+            top: 28px;
+            left: 0;
+            background: #201e19;
+            border: 1px solid #7b6242;
+            padding: 6px 8px;
+            min-width: 180px;
+            display: none;
+            z-index: 210;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.4);
+        }
+        
+        .dropdown-micro.active {
+            display: flex;
+        }
+        
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            color: #e7d8c2;
+            font-size: 9px;
+            border-bottom: 0px solid #4f3f2a;
+            padding-bottom: 0px;
+        }
+        
+        .param-row label {
+            white-space: nowrap;
+            letter-spacing: -0.2px;
+        }
+        
+        /* slider micro */
+        input[type="range"] {
+            width: 110px;
+            height: 2px;
+            -webkit-appearance: none;
+            background: #3f3426;
+            margin: 0;
+        }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 5px;
+            height: 10px;
+            background: #e7bc7c;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+        }
+        
+        .value-badge {
+            background: #12100c;
+            border: 1px solid #5f4b34;
+            padding: 1px 4px;
+            min-width: 28px;
+            text-align: center;
+            font-size: 8px;
+        }
+        
+        .divider-micro {
+            height: 1px;
+            background: #5e4b32;
+            margin: 4px 0;
+        }
+        
+        .info-line {
+            color: #a58f72;
+            font-size: 7px;
+            padding-top: 3px;
+            border-top: 1px solid #4c3d2a;
+            letter-spacing: -0.1px;
+        }
+        
+        /* MODAL ultracompact */
+        .modal-micro {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 8, 6, 0.94);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .modal-micro.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content-micro {
+            background: #201d18;
+            border: 1px solid #bc9468;
+            padding: 12px 14px;
+            max-width: 260px;
+            width: 80%;
+            color: #ecdbba;
+            font-size: 8px;
+            box-shadow: 3px 3px 0px #0b0905;
+        }
+        .modal-content-micro h3 {
+            font-size: 9px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #7a603e;
+            display: inline-block;
+        }
+        .modal-content-micro p {
+            margin: 6px 0;
+            line-height: 1.3;
+        }
+        .close-micro {
+            background: #4b3a26;
+            border: 1px solid #bb8f58;
+            color: #f7e7cf;
+            padding: 3px 10px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 8px;
+        }
+        
+        .menu-relative {
+            position: relative;
+        }
+        
+        /* no rounding anywhere */
+        button, .micro-btn, .logo-micro, .dropdown-micro, .modal-content-micro, .value-badge {
+            border-radius: 0px;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        /* mobile — even tighter */
+        @media (max-width: 640px) {
+            .top-menu {
+                padding: 3px 4px;
+            }
+            .micro-btn, .logo-micro {
+                padding: 2px 5px;
+                font-size: 8px;
+            }
+            .dropdown-micro {
+                min-width: 165px;
+                top: 26px;
+                left: -2px;
+                padding: 5px 6px;
+            }
+            .param-row {
+                gap: 5px;
+            }
+            input[type="range"] {
+                width: 90px;
+            }
+            .value-badge {
+                min-width: 24px;
+                font-size: 7px;
+            }
+            .info-line {
+                font-size: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR: CHICAGO STYLE, NO GAPS -->
+    <div class="top-menu">
+        <div class="menu-left">
+            <div class="logo-micro">◯SVGRA</div>
+            
+            <!-- SCENE MENU (lights + shadow) -->
+            <div class="menu-relative" id="sceneMenuWrap">
+                <button class="micro-btn" id="sceneMenuBtn">SCENE▼</button>
+                <div id="sceneDropdown" class="dropdown-micro">
+                    <div class="param-row">
+                        <label>●MAIN LIGHT</label>
+                        <input type="range" id="mainLightInt" min="0.2" max="2.0" step="0.01" value="1.18">
+                        <span id="mainLightVal" class="value-badge">1.18</span>
+                    </div>
+                    <div class="param-row">
+                        <label>○FILL LIGHT</label>
+                        <input type="range" id="fillLightInt" min="0.0" max="0.9" step="0.01" value="0.35">
+                        <span id="fillLightVal" class="value-badge">0.35</span>
+                    </div>
+                    <div class="param-row">
+                        <label>◉BACK LIGHT</label>
+                        <input type="range" id="backLightInt" min="0.0" max="0.9" step="0.01" value="0.40">
+                        <span id="backLightVal" class="value-badge">0.40</span>
+                    </div>
+                    <div class="divider-micro"></div>
+                    <div class="param-row">
+                        <label>🌫SHADOW SOFT</label>
+                        <input type="range" id="shadowSoft" min="0.2" max="1.6" step="0.01" value="0.68">
+                        <span id="shadowSoftVal" class="value-badge">0.68</span>
+                    </div>
+                    <div class="divider-micro"></div>
+                    <div class="info-line">
+                        MOUSE:ROTATE | R:PAN<br>3D→SHADOW_PROJ
+                    </div>
+                </div>
+            </div>
+            
+            <!-- optional extra menu (future) -->
+            <button class="micro-btn" id="helpButton">INFO</button>
+        </div>
+        <div class="logo-micro" style="opacity:0.6;">8px_UI</div>
+    </div>
+    
+    <!-- MODAL -->
+    <div id="modalMicro" class="modal-micro">
+        <div class="modal-content-micro">
+            <h3>◯3D PROJECTION</h3>
+            <p>REAL-TIME 3D SPHERE + 3 LIGHTS.<br>
+            SOFT SHADOW = SHADOWMAP BLUR.<br>
+            VOLUME PERCEIVED VIA LIGHT/SHADOW.</p>
+            <p>PARAMS: MAIN/FILL/BACK + SHADOW SOFT.</p>
+            <button class="close-micro" id="closeModalBtn">CLOSE</button>
+        </div>
+    </div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        
+        // --- setup scene (preserved perfect geometry) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfef8ef);
+        scene.fog = new THREE.FogExp2(0xfef8ef, 0.0025);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 5);
+        camera.lookAt(0, 0.2, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        // controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.target.set(0, 0.2, 0);
+        
+        // ----- 3 LIGHTS (fully controllable) -----
+        // Main directional (casts shadow)
+        const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.18);
+        mainLight.position.set(3, 5, 2);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = false;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 8;
+        mainLight.shadow.camera.left = -2.8;
+        mainLight.shadow.camera.right = 2.8;
+        mainLight.shadow.camera.top = 2.8;
+        mainLight.shadow.camera.bottom = -2.8;
+        scene.add(mainLight);
+        
+        // Fill light (warm from below)
+        const fillLight = new THREE.PointLight(0xe0c8a8, 0.35);
+        fillLight.position.set(0, -1.4, 1.2);
+        fillLight.castShadow = false;
+        scene.add(fillLight);
+        
+        // Back light (rim light)
+        const backLight = new THREE.PointLight(0xffe0b8, 0.40);
+        backLight.position.set(-1.5, 1.5, -2.2);
+        backLight.castShadow = false;
+        scene.add(backLight);
+        
+        // Ambient (fixed, subtle)
+        const ambientLight = new THREE.AmbientLight(0xefe0cf, 0.44);
+        scene.add(ambientLight);
+        
+        // --- Shadow receiver plane ---
+        const shadowReceiver = new THREE.Mesh(
+            new THREE.PlaneGeometry(6, 6),
+            new THREE.ShadowMaterial({ opacity: 0.46, color: 0x5a4a3a, transparent: true, side: THREE.DoubleSide })
+        );
+        shadowReceiver.rotation.x = -Math.PI / 2;
+        shadowReceiver.position.y = -0.85;
+        shadowReceiver.receiveShadow = true;
+        scene.add(shadowReceiver);
+        
+        // --- BALL (sphere) ---
+        const ballGeo = new THREE.SphereGeometry(0.85, 128, 128);
+        const ballMat = new THREE.MeshStandardMaterial({
+            color: 0xfef5e8,
+            roughness: 0.38,
+            metalness: 0.08,
+            side: THREE.DoubleSide
+        });
+        const ball = new THREE.Mesh(ballGeo, ballMat);
+        ball.castShadow = true;
+        ball.receiveShadow = false;
+        ball.position.set(0, 0.15, 0);
+        scene.add(ball);
+        
+        // --- particles (ambiance) ---
+        const pCount = 150;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(pCount * 3);
+        for (let i = 0; i < pCount; i++) {
+            const r = 1.1 + Math.random() * 0.9;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            pPos[i*3] = Math.sin(phi) * Math.cos(theta) * r;
+            pPos[i*3+1] = Math.sin(phi) * Math.sin(theta) * r + 0.15;
+            pPos[i*3+2] = Math.cos(phi) * r;
+        }
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0xcbb894, size: 0.012, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending });
+        const particles = new THREE.Points(pGeo, pMat);
+        scene.add(particles);
+        
+        // subtle glow
+        const glowGeo = new THREE.SphereGeometry(0.92, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xfef0e0, transparent: true, opacity: 0.07, side: THREE.BackSide });
+        const glowSphere = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(glowSphere);
+        
+        // grid + ring
+        const grid = new THREE.GridHelper(5.2, 20, 0xd8cbb8, 0xe5d8c8);
+        grid.position.y = -0.84;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.22;
+        scene.add(grid);
+        
+        const ringGeo = new THREE.RingGeometry(0.65, 0.85, 32);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xdac09e, transparent: true, opacity: 0.28, roughness: 0.7 });
+        const contactRing = new THREE.Mesh(ringGeo, ringMat);
+        contactRing.rotation.x = -Math.PI / 2;
+        contactRing.position.y = -0.84;
+        scene.add(contactRing);
+        
+        // CSS2D minimal label
+        const css2DRenderer = new CSS2DRenderer();
+        css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        css2DRenderer.domElement.style.position = 'absolute';
+        css2DRenderer.domElement.style.top = '0px';
+        css2DRenderer.domElement.style.left = '0px';
+        css2DRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(css2DRenderer.domElement);
+        
+        const labelDiv = document.createElement('div');
+        labelDiv.textContent = '⚪3D_PROJ';
+        labelDiv.style.fontFamily = 'ChicagoMicro, monospace';
+        labelDiv.style.fontSize = '7px';
+        labelDiv.style.color = '#bda47e';
+        labelDiv.style.background = 'none';
+        labelDiv.style.opacity = '0.55';
+        const labelObj = new CSS2DObject(labelDiv);
+        labelObj.position.set(0, 1.28, 0);
+        scene.add(labelObj);
+        
+        // decorative arrow (light direction hint)
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 1.2, 0.6).normalize(), new THREE.Vector3(1.5, 1.2, 1.2), 1.2, 0xdac09e, 0.5, 0.4);
+        arrowHelper.line.material.transparent = true;
+        arrowHelper.line.material.opacity = 0.16;
+        arrowHelper.cone.material.transparent = true;
+        arrowHelper.cone.material.opacity = 0.18;
+        scene.add(arrowHelper);
+        
+        // --- UI elements ---
+        // main light
+        const mainSlider = document.getElementById('mainLightInt');
+        const mainVal = document.getElementById('mainLightVal');
+        // fill light
+        const fillSlider = document.getElementById('fillLightInt');
+        const fillVal = document.getElementById('fillLightVal');
+        // back light
+        const backSlider = document.getElementById('backLightInt');
+        const backVal = document.getElementById('backLightVal');
+        // shadow softness
+        const shadowSlider = document.getElementById('shadowSoft');
+        const shadowVal = document.getElementById('shadowSoftVal');
+        
+        // dropdown
+        const sceneMenuBtn = document.getElementById('sceneMenuBtn');
+        const sceneDropdown = document.getElementById('sceneDropdown');
+        const helpBtn = document.getElementById('helpButton');
+        const modal = document.getElementById('modalMicro');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        
+        // update functions
+        function updateMain(val) { mainLight.intensity = parseFloat(val); mainVal.innerText = val; }
+        function updateFill(val) { fillLight.intensity = parseFloat(val); fillVal.innerText = val; }
+        function updateBack(val) { backLight.intensity = parseFloat(val); backVal.innerText = val; }
+        
+        // Shadow softness: modifies shadow map radius & shadow camera size for PCF softness
+        function updateShadowSoft(val) {
+            const soft = parseFloat(val);
+            // adjust shadow camera range for softer/harder edges
+            const newSize = 2.0 + (1.5 - soft) * 1.2;
+            mainLight.shadow.camera.left = -newSize;
+            mainLight.shadow.camera.right = newSize;
+            mainLight.shadow.camera.top = newSize;
+            mainLight.shadow.camera.bottom = -newSize;
+            mainLight.shadow.camera.updateProjectionMatrix();
+            // also tweak shadow map blur via bias (subtle opacity on shadow receiver)
+            if (shadowReceiver.material) {
+                const op = Math.min(0.58, Math.max(0.34, 0.46 * (1.2 - (soft - 0.6) * 0.2)));
+                shadowReceiver.material.opacity = op;
+            }
+            shadowVal.innerText = soft.toFixed(2);
+        }
+        
+        mainSlider.addEventListener('input', (e) => updateMain(e.target.value));
+        fillSlider.addEventListener('input', (e) => updateFill(e.target.value));
+        backSlider.addEventListener('input', (e) => updateBack(e.target.value));
+        shadowSlider.addEventListener('input', (e) => updateShadowSoft(e.target.value));
+        
+        // set initial
+        updateMain(mainSlider.value);
+        updateFill(fillSlider.value);
+        updateBack(backSlider.value);
+        updateShadowSoft(shadowSlider.value);
+        
+        // dropdown toggle
+        sceneMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sceneDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', (e) => {
+            if (!sceneMenuBtn.contains(e.target) && !sceneDropdown.contains(e.target)) {
+                sceneDropdown.classList.remove('active');
+            }
+        });
+        
+        // modal
+        helpBtn.addEventListener('click', () => modal.classList.add('active'));
+        closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        
+        // animation loop
+        let t = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            t += 0.008;
+            particles.rotation.y = t * 0.12;
+            particles.rotation.x = Math.sin(t * 0.2) * 0.08;
+            contactRing.rotation.z = t * 0.08;
+            // subtle fill light modulation (optional)
+            controls.update();
+            renderer.render(scene, camera);
+            css2DRenderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        if (window.innerWidth <= 640) sceneDropdown.classList.remove('active');
+        console.log('SVGRA | CHICAGO MICRO UI | 3 LIGHTS + SOFT SHADOW');
+    </script>
+</body>
+</html>
