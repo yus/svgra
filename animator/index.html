@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SVGRA_ANIM // 3D_PROJ</title>
+    <style>
+        @font-face {
+            font-family: 'ChicagoMicro';
+            src: url('https://raw.githubusercontent.com/yusdesign/cyroglyph/master/assets/fonts/cyroglyph.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #fef5ea;
+            font-family: 'ChicagoMicro', 'Courier New', monospace;
+            font-size: 8px;
+            -webkit-text-size-adjust: none;
+            text-size-adjust: none;
+            font-smoothing: none;
+            -webkit-font-smoothing: none;
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        /* force all text — 8px, no bold, no italic */
+        body, button, .menu-btn, .dropdown, .modal-pixel, .param-row, .value-badge, .info-line, .micro-btn, .logo-micro {
+            font-size: 8px;
+            line-height: 1.2;
+            font-family: 'ChicagoMicro', monospace;
+            text-transform: uppercase;
+            font-weight: normal;
+            font-style: normal;
+            letter-spacing: 0px;
+        }
+        
+        /* TOP MENU — no borders top/right/bottom, only left border if any */
+        .top-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background: #1a1814;
+            padding: 2px 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0px;
+            flex-wrap: nowrap;
+            border: none;
+            border-bottom: none;
+            box-shadow: none;
+        }
+        
+        .menu-left {
+            display: flex;
+            gap: 0px;
+            align-items: center;
+        }
+        
+        /* micro buttons — no gaps, flat */
+        .micro-btn {
+            background: #1a1814;
+            border: none;
+            color: #eedbbc;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 8px;
+            line-height: 1;
+            text-transform: uppercase;
+            transition: none;
+            white-space: nowrap;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        .micro-btn:hover {
+            background: #3a2e22;
+            color: #fff2df;
+        }
+        
+        /* no extra logo */
+        
+        /* DROPDOWN — ultracompact, no gaps */
+        .dropdown-micro {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            background: #1e1b16;
+            border: 1px solid #5f4e38;
+            padding: 4px 6px;
+            min-width: 160px;
+            display: none;
+            z-index: 210;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: none;
+        }
+        
+        .dropdown-micro.active {
+            display: flex;
+        }
+        
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            color: #e7d8c2;
+            font-size: 8px;
+            padding: 1px 0;
+        }
+        
+        .param-row label {
+            white-space: nowrap;
+        }
+        
+        /* slider micro */
+        input[type="range"] {
+            width: 100px;
+            height: 2px;
+            -webkit-appearance: none;
+            background: #3f3426;
+            margin: 0;
+        }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 4px;
+            height: 8px;
+            background: #e7bc7c;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+        }
+        
+        .value-badge {
+            background: #0f0d09;
+            border: 1px solid #5f4b34;
+            padding: 0px 4px;
+            min-width: 26px;
+            text-align: center;
+            font-size: 7px;
+        }
+        
+        .divider-micro {
+            height: 1px;
+            background: #4f3e2a;
+            margin: 2px 0;
+        }
+        
+        .info-line {
+            color: #a58f72;
+            font-size: 7px;
+            padding-top: 2px;
+            border-top: 1px solid #4c3d2a;
+        }
+        
+        /* MODAL ultracompact */
+        .modal-micro {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 8, 6, 0.96);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .modal-micro.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content-micro {
+            background: #201d18;
+            border: 1px solid #bc9468;
+            padding: 10px 12px;
+            max-width: 240px;
+            width: 80%;
+            color: #ecdbba;
+            font-size: 8px;
+            box-shadow: none;
+        }
+        .modal-content-micro h3 {
+            font-size: 8px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #7a603e;
+            display: inline-block;
+            font-weight: normal;
+        }
+        .modal-content-micro p {
+            margin: 5px 0;
+            line-height: 1.3;
+        }
+        .close-micro {
+            background: #3b2e1f;
+            border: 1px solid #bb8f58;
+            color: #f7e7cf;
+            padding: 2px 8px;
+            cursor: pointer;
+            margin-top: 6px;
+            font-size: 7px;
+        }
+        
+        .menu-relative {
+            position: relative;
+        }
+        
+        /* no rounding, no borders on top/right/bottom */
+        button, .micro-btn, .dropdown-micro, .modal-content-micro, .value-badge {
+            border-radius: 0px;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        /* mobile — tighter */
+        @media (max-width: 640px) {
+            .top-menu {
+                padding: 2px 2px;
+            }
+            .micro-btn {
+                padding: 2px 4px;
+                font-size: 7px;
+            }
+            .dropdown-micro {
+                min-width: 148px;
+                top: 18px;
+                left: -2px;
+                padding: 4px 5px;
+            }
+            .param-row {
+                gap: 4px;
+            }
+            input[type="range"] {
+                width: 80px;
+            }
+            .value-badge {
+                min-width: 22px;
+                font-size: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP MENU — only Scene and Light, no extras -->
+    <div class="top-menu">
+        <div class="menu-left">
+            <!-- SCENE MENU (Load, Save, About) -->
+            <div class="menu-relative" id="sceneMenuWrap">
+                <button class="micro-btn" id="sceneMenuBtn">SCENE</button>
+                <div id="sceneDropdown" class="dropdown-micro">
+                    <button class="micro-btn" id="loadBtn" style="text-align:left; width:100%;">LOAD</button>
+                    <button class="micro-btn" id="saveBtn" style="text-align:left; width:100%;">SAVE</button>
+                    <div class="divider-micro"></div>
+                    <button class="micro-btn" id="aboutBtn" style="text-align:left; width:100%;">ABOUT</button>
+                </div>
+            </div>
+            
+            <!-- LIGHT MENU (all light params) -->
+            <div class="menu-relative" id="lightMenuWrap">
+                <button class="micro-btn" id="lightMenuBtn">LIGHT</button>
+                <div id="lightDropdown" class="dropdown-micro">
+                    <div class="param-row">
+                        <label>MAIN</label>
+                        <input type="range" id="mainLightInt" min="0.2" max="2.0" step="0.01" value="1.18">
+                        <span id="mainLightVal" class="value-badge">1.18</span>
+                    </div>
+                    <div class="param-row">
+                        <label>FILL</label>
+                        <input type="range" id="fillLightInt" min="0.0" max="0.9" step="0.01" value="0.35">
+                        <span id="fillLightVal" class="value-badge">0.35</span>
+                    </div>
+                    <div class="param-row">
+                        <label>BACK</label>
+                        <input type="range" id="backLightInt" min="0.0" max="0.9" step="0.01" value="0.40">
+                        <span id="backLightVal" class="value-badge">0.40</span>
+                    </div>
+                    <div class="divider-micro"></div>
+                    <div class="param-row">
+                        <label>SHADOW SOFT</label>
+                        <input type="range" id="shadowSoft" min="0.2" max="1.6" step="0.01" value="0.68">
+                        <span id="shadowSoftVal" class="value-badge">0.68</span>
+                    </div>
+                    <div class="divider-micro"></div>
+                    <div class="info-line">
+                        MOUSE:ROTATE | R:PAN
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL (ABOUT) -->
+    <div id="modalMicro" class="modal-micro">
+        <div class="modal-content-micro">
+            <h3>3D PROJECTION</h3>
+            <p>REAL-TIME 3D SPHERE<br>3 LIGHTS + SHADOW SOFT<br>VOLUME VIA LIGHT/SHADOW</p>
+            <p>SVGRA_ANIMATOR v0.1</p>
+            <button class="close-micro" id="closeModalBtn">CLOSE</button>
+        </div>
+    </div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        
+        // --- scene setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfef8ef);
+        scene.fog = new THREE.FogExp2(0xfef8ef, 0.0025);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 5);
+        camera.lookAt(0, 0.2, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.target.set(0, 0.2, 0);
+        
+        // ----- LIGHTS -----
+        const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.18);
+        mainLight.position.set(3, 5, 2);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = false;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 8;
+        mainLight.shadow.camera.left = -2.8;
+        mainLight.shadow.camera.right = 2.8;
+        mainLight.shadow.camera.top = 2.8;
+        mainLight.shadow.camera.bottom = -2.8;
+        scene.add(mainLight);
+        
+        const fillLight = new THREE.PointLight(0xe0c8a8, 0.35);
+        fillLight.position.set(0, -1.4, 1.2);
+        fillLight.castShadow = false;
+        scene.add(fillLight);
+        
+        const backLight = new THREE.PointLight(0xffe0b8, 0.40);
+        backLight.position.set(-1.5, 1.5, -2.2);
+        backLight.castShadow = false;
+        scene.add(backLight);
+        
+        const ambientLight = new THREE.AmbientLight(0xefe0cf, 0.44);
+        scene.add(ambientLight);
+        
+        // shadow receiver plane
+        const shadowReceiver = new THREE.Mesh(
+            new THREE.PlaneGeometry(6, 6),
+            new THREE.ShadowMaterial({ opacity: 0.46, color: 0x5a4a3a, transparent: true, side: THREE.DoubleSide })
+        );
+        shadowReceiver.rotation.x = -Math.PI / 2;
+        shadowReceiver.position.y = -0.85;
+        shadowReceiver.receiveShadow = true;
+        scene.add(shadowReceiver);
+        
+        // ball
+        const ballGeo = new THREE.SphereGeometry(0.85, 128, 128);
+        const ballMat = new THREE.MeshStandardMaterial({
+            color: 0xfef5e8,
+            roughness: 0.38,
+            metalness: 0.08,
+            side: THREE.DoubleSide
+        });
+        const ball = new THREE.Mesh(ballGeo, ballMat);
+        ball.castShadow = true;
+        ball.receiveShadow = false;
+        ball.position.set(0, 0.15, 0);
+        scene.add(ball);
+        
+        // particles
+        const pCount = 140;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(pCount * 3);
+        for (let i = 0; i < pCount; i++) {
+            const r = 1.1 + Math.random() * 0.9;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            pPos[i*3] = Math.sin(phi) * Math.cos(theta) * r;
+            pPos[i*3+1] = Math.sin(phi) * Math.sin(theta) * r + 0.15;
+            pPos[i*3+2] = Math.cos(phi) * r;
+        }
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0xcbb894, size: 0.012, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending });
+        const particles = new THREE.Points(pGeo, pMat);
+        scene.add(particles);
+        
+        const glowGeo = new THREE.SphereGeometry(0.92, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xfef0e0, transparent: true, opacity: 0.07, side: THREE.BackSide });
+        const glowSphere = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(glowSphere);
+        
+        const grid = new THREE.GridHelper(5.2, 20, 0xd8cbb8, 0xe5d8c8);
+        grid.position.y = -0.84;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.22;
+        scene.add(grid);
+        
+        const ringGeo = new THREE.RingGeometry(0.65, 0.85, 32);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xdac09e, transparent: true, opacity: 0.28, roughness: 0.7 });
+        const contactRing = new THREE.Mesh(ringGeo, ringMat);
+        contactRing.rotation.x = -Math.PI / 2;
+        contactRing.position.y = -0.84;
+        scene.add(contactRing);
+        
+        // css2d minimal
+        const css2DRenderer = new CSS2DRenderer();
+        css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        css2DRenderer.domElement.style.position = 'absolute';
+        css2DRenderer.domElement.style.top = '0px';
+        css2DRenderer.domElement.style.left = '0px';
+        css2DRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(css2DRenderer.domElement);
+        
+        const labelDiv = document.createElement('div');
+        labelDiv.textContent = '3D_PROJ';
+        labelDiv.style.fontFamily = 'ChicagoMicro, monospace';
+        labelDiv.style.fontSize = '7px';
+        labelDiv.style.color = '#bda47e';
+        labelDiv.style.background = 'none';
+        labelDiv.style.opacity = '0.5';
+        const labelObj = new CSS2DObject(labelDiv);
+        labelObj.position.set(0, 1.28, 0);
+        scene.add(labelObj);
+        
+        // arrow hint
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 1.2, 0.6).normalize(), new THREE.Vector3(1.5, 1.2, 1.2), 1.2, 0xdac09e, 0.5, 0.4);
+        arrowHelper.line.material.transparent = true;
+        arrowHelper.line.material.opacity = 0.16;
+        arrowHelper.cone.material.transparent = true;
+        arrowHelper.cone.material.opacity = 0.18;
+        scene.add(arrowHelper);
+        
+        // --- UI elements ---
+        const mainSlider = document.getElementById('mainLightInt');
+        const mainVal = document.getElementById('mainLightVal');
+        const fillSlider = document.getElementById('fillLightInt');
+        const fillVal = document.getElementById('fillLightVal');
+        const backSlider = document.getElementById('backLightInt');
+        const backVal = document.getElementById('backLightVal');
+        const shadowSlider = document.getElementById('shadowSoft');
+        const shadowVal = document.getElementById('shadowSoftVal');
+        
+        const sceneMenuBtn = document.getElementById('sceneMenuBtn');
+        const sceneDropdown = document.getElementById('sceneDropdown');
+        const lightMenuBtn = document.getElementById('lightMenuBtn');
+        const lightDropdown = document.getElementById('lightDropdown');
+        const loadBtn = document.getElementById('loadBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const modal = document.getElementById('modalMicro');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        
+        // update functions
+        function updateMain(val) { mainLight.intensity = parseFloat(val); mainVal.innerText = val; }
+        function updateFill(val) { fillLight.intensity = parseFloat(val); fillVal.innerText = val; }
+        function updateBack(val) { backLight.intensity = parseFloat(val); backVal.innerText = val; }
+        
+        function updateShadowSoft(val) {
+            const soft = parseFloat(val);
+            const newSize = 2.0 + (1.5 - soft) * 1.2;
+            mainLight.shadow.camera.left = -newSize;
+            mainLight.shadow.camera.right = newSize;
+            mainLight.shadow.camera.top = newSize;
+            mainLight.shadow.camera.bottom = -newSize;
+            mainLight.shadow.camera.updateProjectionMatrix();
+            if (shadowReceiver.material) {
+                const op = Math.min(0.58, Math.max(0.34, 0.46 * (1.2 - (soft - 0.6) * 0.2)));
+                shadowReceiver.material.opacity = op;
+            }
+            shadowVal.innerText = soft.toFixed(2);
+        }
+        
+        mainSlider.addEventListener('input', (e) => updateMain(e.target.value));
+        fillSlider.addEventListener('input', (e) => updateFill(e.target.value));
+        backSlider.addEventListener('input', (e) => updateBack(e.target.value));
+        shadowSlider.addEventListener('input', (e) => updateShadowSoft(e.target.value));
+        
+        updateMain(mainSlider.value);
+        updateFill(fillSlider.value);
+        updateBack(backSlider.value);
+        updateShadowSoft(shadowSlider.value);
+        
+        // dropdown toggles
+        sceneMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sceneDropdown.classList.toggle('active');
+            lightDropdown.classList.remove('active');
+        });
+        lightMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            lightDropdown.classList.toggle('active');
+            sceneDropdown.classList.remove('active');
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!sceneMenuBtn.contains(e.target) && !sceneDropdown.contains(e.target)) {
+                sceneDropdown.classList.remove('active');
+            }
+            if (!lightMenuBtn.contains(e.target) && !lightDropdown.contains(e.target)) {
+                lightDropdown.classList.remove('active');
+            }
+        });
+        
+        // LOAD / SAVE / ABOUT
+        function saveScene() {
+            const state = {
+                main: mainLight.intensity,
+                fill: fillLight.intensity,
+                back: backLight.intensity,
+                shadowSoft: parseFloat(shadowSlider.value),
+                camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+            };
+            const dataStr = JSON.stringify(state, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'svgra_scene.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function loadScene() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const state = JSON.parse(ev.target.result);
+                        if (state.main !== undefined) mainSlider.value = state.main;
+                        if (state.fill !== undefined) fillSlider.value = state.fill;
+                        if (state.back !== undefined) backSlider.value = state.back;
+                        if (state.shadowSoft !== undefined) shadowSlider.value = state.shadowSoft;
+                        if (state.camera) camera.position.set(state.camera.x, state.camera.y, state.camera.z);
+                        if (state.target) controls.target.set(state.target.x, state.target.y, state.target.z);
+                        updateMain(mainSlider.value);
+                        updateFill(fillSlider.value);
+                        updateBack(backSlider.value);
+                        updateShadowSoft(shadowSlider.value);
+                        controls.update();
+                    } catch(err) { console.warn('load error'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        loadBtn.addEventListener('click', () => { loadScene(); sceneDropdown.classList.remove('active'); });
+        saveBtn.addEventListener('click', () => { saveScene(); sceneDropdown.classList.remove('active'); });
+        aboutBtn.addEventListener('click', () => { modal.classList.add('active'); sceneDropdown.classList.remove('active'); });
+        closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        
+        // animation
+        let t = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            t += 0.008;
+            particles.rotation.y = t * 0.12;
+            particles.rotation.x = Math.sin(t * 0.2) * 0.08;
+            contactRing.rotation.z = t * 0.08;
+            controls.update();
+            renderer.render(scene, camera);
+            css2DRenderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        if (window.innerWidth <= 640) {
+            sceneDropdown.classList.remove('active');
+            lightDropdown.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
