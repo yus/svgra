@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Мяч — пространство для взгляда</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eae3d7;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        .container {
+            background: #fefaf2;
+            border-radius: 48px;
+            padding: 32px 28px 28px 28px;
+            box-shadow: 0 30px 50px -20px rgba(0,0,0,0.25);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+
+        .caption {
+            text-align: center;
+            margin-top: 28px;
+            font-size: 0.8rem;
+            letter-spacing: 0.4px;
+            color: #9b8a78;
+            font-style: italic;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .caption span {
+            background: #f4ede4;
+            padding: 4px 14px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: #7f6b58;
+        }
+
+        button {
+            background: none;
+            border: 1px solid #e0d3c4;
+            padding: 5px 20px;
+            border-radius: 40px;
+            font-family: inherit;
+            font-size: 0.7rem;
+            color: #9b8672;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 16px;
+        }
+
+        button:hover {
+            background: #e9dfd3;
+            border-color: #cbb99f;
+            color: #5c4838;
+        }
+        
+        .note {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.65rem;
+            color: #bcab99;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="container">
+        <canvas id="viewersBallCanvas" width="800" height="800" style="width: 100%; height: auto; max-width: 800px; aspect-ratio: 800 / 800"></canvas>
+    </div>
+    <div class="caption">
+        <span>⚡ одна линия</span>
+        <span>◯ пустая форма</span>
+        <span>● одна тень</span>
+        <span>◌ остальное — вы</span>
+        <button id="refreshBtn">🖌 ещё раз</button>
+    </div>
+    <div class="note">
+        взгляд достраивает объём там, где его не навязывают
+    </div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('viewersBallCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const size = 800;
+        canvas.width = size;
+        canvas.height = size;
+        
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = size * 0.31; // ~248px, крупно, но не давит
+        
+        // --------
+        // Я — художник. Я не рисую мяч. Я рисую то, что позволяет его увидеть.
+        // Я оставляю зрителю воздух, пространство, недосказанность.
+        // --------
+        
+        // 1. ФОН — живая, дышащая плоскость. Не бумага, не экран, а среда.
+        function drawBreathingBackground() {
+            // не чисто белый, а тёплый, подвижный — как свет в мастерской
+            const grad = ctx.createLinearGradient(0, 0, size, size * 0.7);
+            grad.addColorStop(0, '#fdf7ed');
+            grad.addColorStop(0.6, '#fcf2e4');
+            grad.addColorStop(1, '#f9ebdb');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            
+            // едва заметное движение — не фактура, а "воздух"
+            ctx.globalCompositeOperation = 'soft-light';
+            for (let i = 0; i < 280; i++) {
+                ctx.fillStyle = `rgba(170, 140, 110, ${Math.random() * 0.04})`;
+                ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        // 2. ТЕНЬ — одна. Не "правильная", а та, что создаёт глубину.
+        // Она не привязана к геометрии жёстко — она существует, и зритель верит ей.
+        function drawSingleShadow() {
+            ctx.save();
+            // тень — не эллипс, а пятно, которое живёт под мячом
+            // чуть смещена вправо-вниз, но не "объясняет" источник света
+            
+            const shadowX = centerX + 28;
+            const shadowY = centerY + 38;
+            
+            // первый слой — мягкое, расплывчатое пятно
+            ctx.beginPath();
+            ctx.ellipse(shadowX, shadowY, radius * 0.52, radius * 0.28, 0.12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(75, 60, 48, 0.38)';
+            ctx.fill();
+            
+            // второй — более плотное ядро, но без чёткости
+            ctx.beginPath();
+            ctx.ellipse(shadowX - 4, shadowY + 2, radius * 0.38, radius * 0.22, 0.05, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(60, 47, 38, 0.48)';
+            ctx.fill();
+            
+            // несколько свободных мазков — тень "шевелится"
+            for (let i = 0; i < 45; i++) {
+                ctx.beginPath();
+                const offX = (Math.random() - 0.5) * 32;
+                const offY = (Math.random() - 0.5) * 24;
+                ctx.ellipse(shadowX + offX, shadowY + offY, 
+                    radius * 0.08 + Math.random() * 12, 
+                    radius * 0.05 + Math.random() * 8, 
+                    Math.random() * Math.PI, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(55, 43, 34, ${0.08 + Math.random() * 0.18})`;
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        // 3. САМ МЯЧ — почти пустота. Лёгкий намёк на объём, без градиентной "правильности".
+        function drawEmptyForm() {
+            ctx.save();
+            
+            // не закрашиваем полностью — оставляем воздух
+            // очень лёгкая, почти прозрачная заливка, чтобы форма существовала
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(252, 248, 238, 0.55)';
+            ctx.fill();
+            
+            // едва заметный рефлекс — не блик, а намёк на материал
+            ctx.beginPath();
+            ctx.arc(centerX - radius * 0.28, centerY - radius * 0.24, radius * 0.12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 252, 240, 0.45)';
+            ctx.fill();
+            
+            // на нижней части — лёгкая полутень, но без "объяснения"
+            ctx.beginPath();
+            ctx.ellipse(centerX + radius * 0.18, centerY + radius * 0.32, radius * 0.28, radius * 0.16, 0.1, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(120, 95, 75, 0.12)';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 4. ОДНА ЛИНИЯ — живой, прерывистый контур.
+        // Линия не обводит форму, а проходит рядом, оставляя зазор.
+        // Зритель сам замыкает форму в сознании.
+        function drawSingleLivingLine() {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // главная линия — идёт вокруг мяча, но не смыкается полностью
+            // она то приближается к форме, то отдаляется
+            ctx.beginPath();
+            
+            let firstPoint = true;
+            // идём почти по кругу, но с большими разрывами и уходами
+            for (let ang = 0; ang <= Math.PI * 2 + 0.3; ang += 0.09) {
+                // вариация радиуса — линия "дышит"
+                const pulse = Math.sin(ang * 3.2) * 3.2 + Math.sin(ang * 7) * 1.4;
+                let rLine = radius + pulse;
+                
+                // в нескольких местах линия резко уходит внутрь или наружу
+                if (Math.sin(ang * 2.4) > 0.7 && Math.sin(ang * 1.8) < 0.2) {
+                    rLine = radius - 12 + Math.sin(ang * 5) * 5;
+                }
+                if (Math.cos(ang * 1.5) > 0.8) {
+                    rLine = radius + 11 + Math.sin(ang * 4) * 3;
+                }
+                
+                const x = centerX + Math.cos(ang) * rLine;
+                const y = centerY + Math.sin(ang) * rLine;
+                
+                if (firstPoint) {
+                    ctx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                
+                // создаём разрывы: линия не замкнута, зритель мысленно соединяет
+                if (ang > 0.8 && ang < 1.4) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+                if (ang > 2.5 && ang < 3.0) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+                if (ang > 4.2 && ang < 4.8) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+            }
+            
+            ctx.strokeStyle = '#8d735b';
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+            
+            // вторая, едва заметная линия — эхо, отражение первой
+            ctx.beginPath();
+            firstPoint = true;
+            for (let ang = 0.3; ang <= Math.PI * 2; ang += 0.12) {
+                const rLine2 = radius - 4 + Math.sin(ang * 2.8) * 2.5;
+                const x = centerX + Math.cos(ang) * rLine2;
+                const y = centerY + Math.sin(ang) * rLine2;
+                if (firstPoint) {
+                    ctx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                if (ang > 1.2 && ang < 1.9) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+                if (ang > 3.5 && ang < 4.1) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+            }
+            ctx.strokeStyle = '#c9af93';
+            ctx.lineWidth = 1.0;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // 5. НЕСКОЛЬКО СВОБОДНЫХ ШТРИХОВ — не штриховка, а движение взгляда.
+        // Они не объясняют форму, а создают ритм.
+        function drawFreeGestures() {
+            ctx.save();
+            ctx.lineCap = 'round';
+            
+            // лёгкие, летящие штрихи — как намёк на свет или движение
+            for (let i = 0; i < 65; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = radius * (0.5 + Math.random() * 0.7);
+                const x = centerX + Math.cos(angle) * dist;
+                const y = centerY + Math.sin(angle) * dist;
+                
+                // направление штриха — не по форме, а свободное
+                const dirAngle = angle + Math.PI/2 + (Math.random() - 0.5) * 1.4;
+                const length = 4 + Math.random() * 14;
+                
+                const x2 = x + Math.cos(dirAngle) * length;
+                const y2 = y + Math.sin(dirAngle) * length;
+                const x1 = x - Math.cos(dirAngle) * (length * 0.5);
+                const y1 = y - Math.sin(dirAngle) * (length * 0.5);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = `rgba(105, 80, 60, ${0.12 + Math.random() * 0.22})`;
+                ctx.lineWidth = 0.9 + Math.random() * 1.2;
+                ctx.stroke();
+            }
+            
+            // несколько более уверенных мазков — "вспышки" взгляда
+            for (let i = 0; i < 18; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = radius * (0.7 + Math.random() * 0.5);
+                const x = centerX + Math.cos(angle) * dist;
+                const y = centerY + Math.sin(angle) * dist;
+                const dir = angle + (Math.random() - 0.5) * 1.2;
+                const len = 9 + Math.random() * 18;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + Math.cos(dir) * len, y + Math.sin(dir) * len);
+                ctx.strokeStyle = `rgba(130, 95, 70, ${0.25 + Math.random() * 0.25})`;
+                ctx.lineWidth = 1.3 + Math.random() * 1.4;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        // 6. ПЯТНО СВЕТА — не блик, а пустота, которая становится объёмом.
+        function drawLightBreath() {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            // мягкое световое пятно — зритель сам поймёт, откуда свет
+            ctx.beginPath();
+            ctx.ellipse(centerX - radius * 0.35, centerY - radius * 0.3, radius * 0.22, radius * 0.18, -0.1, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 250, 235, 0.38)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(centerX - radius * 0.5, centerY - radius * 0.15, radius * 0.1, radius * 0.08, -0.2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 252, 240, 0.55)';
+            ctx.fill();
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // и совсем лёгкое свечение по краю — не контур, а "аура"
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(245, 235, 215, 0)';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 7. ОДНА ТОЧКА — акцент, центр тяжести.
+        // Это не центр мяча, а место, куда смотрит взгляд.
+        function drawOnePoint() {
+            ctx.save();
+            // точка чуть смещена, не в геометрическом центре
+            const pointX = centerX - 6;
+            const pointY = centerY - 8;
+            
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, 3.2, 0, Math.PI * 2);
+            ctx.fillStyle = '#cbb088';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, 1.4, 0, Math.PI * 2);
+            ctx.fillStyle = '#f5e5ca';
+            ctx.fill();
+            
+            // лёгкое сияние вокруг точки
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(210, 175, 125, 0.12)';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 8. ПРОСТРАНСТВО ВОКРУГ — несколько свободных линий, которые не касаются мяча.
+        // Они создают среду, в которой мяч существует.
+        function drawSurroundingSpace() {
+            ctx.save();
+            ctx.lineCap = 'round';
+            
+            // далёкие, едва заметные дуги
+            for (let i = 0; i < 35; i++) {
+                const angleCenter = Math.random() * Math.PI * 2;
+                const distCenter = radius * (1.1 + Math.random() * 0.9);
+                const cx = centerX + Math.cos(angleCenter) * distCenter;
+                const cy = centerY + Math.sin(angleCenter) * distCenter;
+                const radArc = 20 + Math.random() * 45;
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, radArc, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(150, 120, 90, ${0.04 + Math.random() * 0.08})`;
+                ctx.lineWidth = 0.6;
+                ctx.stroke();
+            }
+            
+            // лёгкие, почти невидимые линии, уходящие за пределы
+            for (let i = 0; i < 22; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const startRad = radius + 15 + Math.random() * 25;
+                const endRad = radius + 55 + Math.random() * 70;
+                const x1 = centerX + Math.cos(angle) * startRad;
+                const y1 = centerY + Math.sin(angle) * startRad;
+                const x2 = centerX + Math.cos(angle + (Math.random() - 0.5) * 0.7) * endRad;
+                const y2 = centerY + Math.sin(angle + (Math.random() - 0.5) * 0.7) * endRad;
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = `rgba(130, 100, 75, ${0.06 + Math.random() * 0.1})`;
+                ctx.lineWidth = 0.7;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        // --------
+        // Я — зритель. Я смотрю на то, что сделал художник.
+        // Я вижу не линии и пятна, а мяч, который здесь есть.
+        // Моё восприятие завершает картину.
+        // --------
+        
+        function drawForViewer() {
+            // художник готовит пространство
+            drawBreathingBackground();
+            
+            // тень — первая, она задаёт глубину
+            drawSingleShadow();
+            
+            // почти пустая форма — только намёк
+            drawEmptyForm();
+            
+            // линия — живая, прерывистая, оставляющая зазор
+            drawSingleLivingLine();
+            
+            // световое дыхание — без бликов, но с ощущением
+            drawLightBreath();
+            
+            // свободные жесты — не штриховка, а ритм
+            drawFreeGestures();
+            
+            // одна точка — центр внимания, но не геометрии
+            drawOnePoint();
+            
+            // пространство вокруг — чтобы мяч не был изолирован
+            drawSurroundingSpace();
+            
+            // последний штрих художника: едва заметная, уходящая линия
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius - 18, centerY + radius * 0.6);
+            ctx.lineTo(centerX - radius - 48, centerY + radius * 0.2);
+            ctx.strokeStyle = 'rgba(140, 110, 80, 0.2)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // финальный рисунок
+        function render() {
+            drawForViewer();
+        }
+        
+        render();
+        
+        // кнопка обновления — не "сгенерировать заново", а "посмотреть ещё раз"
+        // каждый раз рисунок немного иной, как живой взгляд
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                render();
+            });
+        }
+        
+        // при ресайзе перерисовываем, чтобы сохранить пропорции восприятия
+        window.addEventListener('resize', () => {
+            render();
+        });
+        
+        // небольшой комментарий в консоль — для себя как зрителя
+        console.log('художник оставил пространство. зритель видит мяч.');
+    })();
+</script>
+</body>
+</html>
