@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Художественный мяч — свет, тень, живая линия</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #e8e2d8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Georgia', 'Times New Roman', 'Segoe UI', serif;
+        }
+
+        .container {
+            background: #faf7f2;
+            border-radius: 48px;
+            padding: 28px 24px 24px 24px;
+            box-shadow: 0 30px 45px -15px rgba(0,0,0,0.2);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+            cursor: crosshair;
+        }
+
+        .caption {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.85rem;
+            letter-spacing: 0.4px;
+            color: #6b5a4e;
+            font-style: italic;
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        .caption span {
+            background: #f0ebe4;
+            padding: 5px 16px;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: #5e4b3a;
+            letter-spacing: 0.3px;
+        }
+
+        button {
+            background: none;
+            border: 1px solid #d9cdbc;
+            padding: 6px 20px;
+            border-radius: 40px;
+            font-family: inherit;
+            font-size: 0.7rem;
+            color: #7f6856;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 16px;
+        }
+
+        button:hover {
+            background: #e7dfd5;
+            border-color: #b8a28c;
+            color: #4a3727;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="container">
+        <canvas id="artisticBallCanvas" width="800" height="800" style="width: 100%; height: auto; max-width: 800px; aspect-ratio: 800 / 800"></canvas>
+    </div>
+    <div class="caption">
+        <span>✧ живая линия</span>
+        <span>◯ пластичная форма</span>
+        <span>〰 выразительный штрих</span>
+        <span>● глубокая тень</span>
+        <button id="refreshBtn">🖌 обновить штрихи</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('artisticBallCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // фиксируем размер: рисуем в 1:1 масштабе, чтобы штрихи не сжимались
+        const size = 800;
+        canvas.width = size;
+        canvas.height = size;
+        
+        // центр и радиус — крупный, выразительный
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = size * 0.32; // ~256px
+        
+        // --- НАПРАВЛЕНИЕ СВЕТА (слева-сверху, чуть теплый) ---
+        const lightX = -0.55;   // вектор света X
+        const lightY = -0.65;   // вектор света Y
+        const lightZ = 0.5;
+        
+        // функция для получения интенсивности света на сфере (lambert)
+        function getLightIntensity(nx, ny, nz) {
+            // нормализуем вектор света
+            const len = Math.hypot(lightX, lightY, lightZ);
+            const lx = lightX / len;
+            const ly = lightY / len;
+            const lz = lightZ / len;
+            let intensity = nx * lx + ny * ly + nz * lz;
+            return Math.min(0.95, Math.max(0.2, intensity * 0.9 + 0.35));
+        }
+        
+        // ---------- 1. ФОН: спокойный, не перетягивает внимание ----------
+        function drawBackground() {
+            // мягкий градиент от теплого к нейтральному
+            const grad = ctx.createLinearGradient(0, 0, size, size);
+            grad.addColorStop(0, '#fef8ef');
+            grad.addColorStop(1, '#faf3e8');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            
+            // легчайшая зернистость — едва заметная, создает "бумажную" фактуру
+            ctx.globalCompositeOperation = 'soft-light';
+            for (let i = 0; i < 600; i++) {
+                ctx.fillStyle = `rgba(130, 100, 75, ${Math.random() * 0.06})`;
+                ctx.fillRect(Math.random() * size, Math.random() * size, 1.2, 1.2);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        // ---------- 2. ТЕНЬ: привязанная к мячу, согласованная с источником света ----------
+        // Смещение тени в соответствии с направлением света (проекция на пол)
+        function drawIntegratedShadow() {
+            ctx.save();
+            // направление света в плоскости X,Y
+            const shadowDirX = lightX * 0.9;
+            const shadowDirY = lightY * 0.85;
+            // смещение тени: чем выше свет, тем тень дальше и мягче
+            const offsetX = shadowDirX * 28;
+            const offsetY = shadowDirY * 32;
+            
+            // основной эллипс тени — мягкий, с перспективным сжатием
+            ctx.beginPath();
+            ctx.ellipse(
+                centerX + offsetX + 6,
+                centerY + offsetY + 18,
+                radius * 0.62,
+                radius * 0.38,
+                0.12, 0, Math.PI * 2
+            );
+            ctx.fillStyle = 'rgba(60, 48, 38, 0.45)';
+            ctx.fill();
+            
+            // внутренняя, более плотная часть тени ближе к мячу
+            ctx.beginPath();
+            ctx.ellipse(
+                centerX + offsetX + 2,
+                centerY + offsetY + 10,
+                radius * 0.48,
+                radius * 0.3,
+                0.08, 0, Math.PI * 2
+            );
+            ctx.fillStyle = 'rgba(50, 38, 30, 0.55)';
+            ctx.fill();
+            
+            // легкая растушевка — мелкие штрихи, интегрирующие тень с поверхностью
+            for (let i = 0; i < 140; i++) {
+                const angleT = Math.random() * Math.PI * 2;
+                const radT = radius * (0.45 + Math.random() * 0.4);
+                const xT = centerX + offsetX + Math.cos(angleT) * radT * 0.7;
+                const yT = centerY + offsetY + Math.sin(angleT) * radT * 0.55;
+                ctx.beginPath();
+                ctx.arc(xT + (Math.random() - 0.5) * 10, yT + (Math.random() - 0.5) * 8, Math.random() * 2 + 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(55, 42, 34, ${Math.random() * 0.2 + 0.12})`;
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        // ---------- 3. ФОРМА МЯЧА: объемный градиент + светотень по Ламберту ----------
+        function drawBallForm() {
+            ctx.save();
+            
+            // создаем детальную радиальную градиентную основу с учетом направления света
+            const grad = ctx.createRadialGradient(
+                centerX - radius * 0.3, centerY - radius * 0.28, radius * 0.12,
+                centerX, centerY, radius * 0.98
+            );
+            grad.addColorStop(0, '#fffcf0');
+            grad.addColorStop(0.3, '#fcf3e2');
+            grad.addColorStop(0.6, '#f0e4cf');
+            grad.addColorStop(0.85, '#e3d2b8');
+            grad.addColorStop(1, '#d4be9c');
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            
+            // --- ПОЛУТОНОВЫЕ СЛОИ (усиление объема) ---
+            // создаем массив пиксельных полутонов с помощью наложения градиентных масок
+            ctx.globalCompositeOperation = 'multiply';
+            
+            // 1. затемнение с противоположной стороны света (собственная тень)
+            const darkGrad = ctx.createLinearGradient(
+                centerX + radius * 0.5, centerY + radius * 0.4,
+                centerX - radius * 0.6, centerY - radius * 0.5
+            );
+            darkGrad.addColorStop(0, 'rgba(100, 75, 55, 0)');
+            darkGrad.addColorStop(0.65, 'rgba(85, 62, 45, 0.28)');
+            darkGrad.addColorStop(1, 'rgba(70, 50, 38, 0.42)');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = darkGrad;
+            ctx.fill();
+            
+            // 2. мягкая полутень с теплым рефлексом снизу
+            const warmReflex = ctx.createLinearGradient(
+                centerX - radius * 0.3, centerY + radius * 0.5,
+                centerX + radius * 0.4, centerY - radius * 0.3
+            );
+            warmReflex.addColorStop(0, 'rgba(180, 135, 95, 0.18)');
+            warmReflex.addColorStop(1, 'rgba(130, 90, 60, 0)');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 2, 0, Math.PI * 2);
+            ctx.fillStyle = warmReflex;
+            ctx.fill();
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // 3. Блик — выразительный, со стороны источника света
+            ctx.beginPath();
+            ctx.arc(centerX - radius * 0.32, centerY - radius * 0.35, radius * 0.17, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 252, 240, 0.72)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX - radius * 0.45, centerY - radius * 0.28, radius * 0.09, 0, Math.PI * 2);
+            ctx.fillStyle = '#fffef5';
+            ctx.fill();
+            
+            // маленький акцент блика
+            ctx.beginPath();
+            ctx.arc(centerX - radius * 0.52, centerY - radius * 0.22, radius * 0.045, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // ---------- 4. НАПРАВЛЕННАЯ ШТРИХОВКА (следует форме, не хаотична) ----------
+        function drawDirectionalHatching() {
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.lineCap = 'round';
+            
+            // Штрихи, идущие по параллелям и меридианам сферы — подчеркивают объем
+            // Горизонтальные дуги (параллели)
+            for (let level = -0.7; level <= 0.8; level += 0.28) {
+                const yOffset = level * radius * 0.85;
+                const rAtLevel = Math.sqrt(Math.max(0, radius * radius - yOffset * yOffset));
+                if (rAtLevel < 12) continue;
+                
+                ctx.beginPath();
+                const steps = Math.max(24, Math.floor(28 * (rAtLevel / radius)));
+                for (let i = 0; i <= steps; i++) {
+                    const angle = Math.PI * 2 * (i / steps);
+                    const x = centerX + Math.cos(angle) * rAtLevel;
+                    const y = centerY + yOffset;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = `rgba(100, 75, 55, 0.21)`;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+            
+            // Вертикальные меридианы (изогнутые линии)
+            for (let meridian = 0; meridian < 14; meridian++) {
+                const angleStart = (meridian / 14) * Math.PI * 2;
+                ctx.beginPath();
+                for (let t = -Math.PI/2; t <= Math.PI/2; t += 0.12) {
+                    const x = centerX + Math.cos(angleStart) * Math.cos(t) * radius;
+                    const y = centerY + Math.sin(t) * radius;
+                    if (t === -Math.PI/2) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = `rgba(95, 70, 52, 0.2)`;
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+            }
+            
+            // Короткие, живые штрихи — точечные акценты, идущие по касательной к форме
+            const hatchCount = 380;
+            for (let i = 0; i < hatchCount; i++) {
+                // выбираем точку на сфере с неравномерным распределением (больше в полутенях)
+                const angleRad = Math.random() * Math.PI * 2;
+                const inclination = Math.acos(2 * Math.random() - 1);
+                const x = centerX + radius * Math.sin(inclination) * Math.cos(angleRad);
+                const y = centerY + radius * Math.sin(inclination) * Math.sin(angleRad);
+                const nx = (x - centerX) / radius;
+                const ny = (y - centerY) / radius;
+                const nz = Math.sqrt(Math.max(0, 1 - nx*nx - ny*ny));
+                const intensity = getLightIntensity(nx, ny, nz);
+                
+                // штрихи гуще в теневых областях, реже на свету — так живее
+                if (intensity > 0.7 && Math.random() > 0.45) continue;
+                
+                // направление штриха — по касательной (перпендикулярно радиус-вектору)
+                const tangentAngle = angleRad + Math.PI/2 + (Math.random() - 0.5) * 0.9;
+                const length = 3 + Math.random() * 8;
+                const x2 = x + Math.cos(tangentAngle) * length;
+                const y2 = y + Math.sin(tangentAngle) * length;
+                const x3 = x - Math.cos(tangentAngle) * (length * 0.6);
+                const y3 = y - Math.sin(tangentAngle) * (length * 0.6);
+                
+                ctx.beginPath();
+                ctx.moveTo(x3, y3);
+                ctx.lineTo(x2, y2);
+                const darkFactor = 0.22 + (1 - intensity) * 0.32;
+                ctx.strokeStyle = `rgba(75, 55, 42, ${darkFactor * 0.9})`;
+                ctx.lineWidth = 0.7 + Math.random() * 1.1;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // ---------- 5. ЖИВАЯ ЛИНИЯ (вариативный контур с нажимом, разрывами) ----------
+        function drawExpressiveOutline() {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // основной контур — переменной толщины, "дышащий"
+            ctx.beginPath();
+            for (let ang = 0; ang <= Math.PI * 2; ang += 0.045) {
+                const variation = Math.sin(ang * 5) * 1.2 + Math.sin(ang * 12) * 0.6;
+                const rVar = radius + variation * 1.1;
+                const x = centerX + Math.cos(ang) * rVar;
+                const y = centerY + Math.sin(ang) * rVar;
+                if (ang === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#9f8264';
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+            
+            // вторичный, более легкий контур с разрывами и вылетами
+            ctx.beginPath();
+            let firstPoint = true;
+            for (let ang = 0.2; ang <= Math.PI * 2 - 0.1; ang += 0.11) {
+                const wiggle = Math.sin(ang * 7) * 1.5;
+                const rOffset = radius + wiggle * 0.8;
+                const x = centerX + Math.cos(ang) * rOffset;
+                const y = centerY + Math.sin(ang) * rOffset;
+                if (firstPoint) {
+                    ctx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                // создаем разрывы: пропускаем сегменты
+                if (Math.random() < 0.08) {
+                    ctx.stroke();
+                    firstPoint = true;
+                }
+            }
+            ctx.stroke();
+            ctx.strokeStyle = '#bb9878';
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+            
+            // "летучие" линии, выходящие за пределы формы — ощущение эскиза
+            for (let i = 0; i < 48; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const startRad = radius - 4 + Math.random() * 6;
+                const endRad = radius + 10 + Math.random() * 22;
+                const xStart = centerX + Math.cos(angle) * startRad;
+                const yStart = centerY + Math.sin(angle) * startRad;
+                const xEnd = centerX + Math.cos(angle + (Math.random() - 0.5) * 0.7) * endRad;
+                const yEnd = centerY + Math.sin(angle + (Math.random() - 0.5) * 0.7) * endRad;
+                ctx.beginPath();
+                ctx.moveTo(xStart, yStart);
+                ctx.lineTo(xEnd, yEnd);
+                ctx.strokeStyle = `rgba(130, 92, 65, ${0.2 + Math.random() * 0.28})`;
+                ctx.lineWidth = 1.0 + Math.random() * 1.4;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // ---------- 6. АКЦЕНТЫ: рефлексы, блики, финальная текстура ----------
+        function drawFinalAccents() {
+            ctx.save();
+            ctx.globalCompositeOperation = 'overlay';
+            
+            // теплый рефлекс от поверхности (отраженный свет снизу)
+            ctx.beginPath();
+            ctx.ellipse(centerX + radius * 0.32, centerY + radius * 0.42, radius * 0.2, radius * 0.12, -0.2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(190, 145, 105, 0.25)';
+            ctx.fill();
+            
+            // дополнительный акцент света на краю формы
+            ctx.beginPath();
+            ctx.ellipse(centerX - radius * 0.45, centerY - radius * 0.15, radius * 0.09, radius * 0.05, -0.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(250, 240, 215, 0.45)';
+            ctx.fill();
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // деликатные точечные блики (не перегружаем)
+            for (let i = 0; i < 55; i++) {
+                const angleGlint = Math.random() * Math.PI * 2;
+                const radGlint = radius * (0.5 + Math.random() * 0.45);
+                const xGl = centerX + Math.cos(angleGlint) * radGlint;
+                const yGl = centerY + Math.sin(angleGlint) * radGlint;
+                ctx.beginPath();
+                ctx.arc(xGl, yGl, Math.random() * 1.5 + 0.6, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 245, 220, ${0.4 + Math.random() * 0.4})`;
+                ctx.fill();
+            }
+            
+            // финальная "зернистость" — легкая, интегрированная в форму
+            ctx.globalCompositeOperation = 'multiply';
+            for (let i = 0; i < 400; i++) {
+                const angG = Math.random() * Math.PI * 2;
+                const radG = radius * Math.sqrt(Math.random());
+                const xG = centerX + Math.cos(angG) * radG;
+                const yG = centerY + Math.sin(angG) * radG;
+                ctx.fillStyle = `rgba(90, 68, 50, ${Math.random() * 0.12})`;
+                ctx.fillRect(xG, yG, 1.2, 1.2);
+            }
+            ctx.restore();
+        }
+        
+        // ---------- 7. УСИЛЕНИЕ ТЕНИ В САМОМ МЯЧЕ (светотень по Ламберту) ----------
+        function addLambertShading() {
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            // создаем плавную карту освещения с помощью радиального градиента
+            const shadeGrad = ctx.createRadialGradient(
+                centerX + radius * 0.4, centerY + radius * 0.35, radius * 0.2,
+                centerX - radius * 0.3, centerY - radius * 0.2, radius * 1.1
+            );
+            shadeGrad.addColorStop(0, 'rgba(60, 45, 35, 0)');
+            shadeGrad.addColorStop(0.5, 'rgba(70, 52, 42, 0.12)');
+            shadeGrad.addColorStop(0.85, 'rgba(85, 62, 48, 0.28)');
+            shadeGrad.addColorStop(1, 'rgba(70, 52, 40, 0.35)');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = shadeGrad;
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // ---------- 8. ПОСЛЕДНИЙ ШТРИХ: глубокая тень под мячом, связывающая с полом ----------
+        function attachGroundShadow() {
+            ctx.save();
+            const gradientShadow = ctx.createLinearGradient(centerX - 25, GROUND_Y - 12, centerX + 20, GROUND_Y + 8);
+            // используем переменную пола чуть ниже центра (визуально)
+            const groundLevel = centerY + radius * 0.68;
+            const shadowY = groundLevel - 4;
+            ctx.beginPath();
+            ctx.ellipse(centerX + 8, shadowY + 6, radius * 0.55, radius * 0.28, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(45, 35, 28, 0.42)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 2, shadowY + 3, radius * 0.42, radius * 0.22, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(55, 42, 34, 0.55)';
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // вспомогательный уровень пола для тени
+        const GROUND_Y = centerY + radius * 0.7;
+        
+        // ---------- ГЛАВНАЯ ФУНКЦИЯ РИСОВАНИЯ ----------
+        function drawMasterpiece() {
+            // 1. фон
+            drawBackground();
+            
+            // 2. интегрированная тень на полу (привязана к свету)
+            drawIntegratedShadow();
+            
+            // 3. форма мяча (объем, градиент)
+            drawBallForm();
+            
+            // 4. направленная штриховка (следует форме, подчеркивает объем)
+            drawDirectionalHatching();
+            
+            // 5. светотень Ламберта (усиление объема)
+            addLambertShading();
+            
+            // 6. живая линия + динамичный контур
+            drawExpressiveOutline();
+            
+            // 7. финальные акценты, блики, рефлексы
+            drawFinalAccents();
+            
+            // 8. привязывающая тень в основании
+            attachGroundShadow();
+            
+            // 9. финальный "воздушный" штрих — несколько летучих мазков вокруг мяча
+            ctx.save();
+            for (let i = 0; i < 28; i++) {
+                const angleFly = Math.random() * Math.PI * 2;
+                const radFly = radius + 12 + Math.random() * 30;
+                const xStart = centerX + Math.cos(angleFly) * (radius - 2);
+                const yStart = centerY + Math.sin(angleFly) * (radius - 1);
+                const xEnd = centerX + Math.cos(angleFly + (Math.random() - 0.5) * 0.8) * radFly;
+                const yEnd = centerY + Math.sin(angleFly + (Math.random() - 0.5) * 0.8) * radFly;
+                ctx.beginPath();
+                ctx.moveTo(xStart, yStart);
+                ctx.lineTo(xEnd, yEnd);
+                ctx.strokeStyle = `rgba(100, 73, 54, ${0.18 + Math.random() * 0.22})`;
+                ctx.lineWidth = 0.9 + Math.random() * 1.2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // Функция обновления (перерисовка с сохранением стиля, но свежими штрихами)
+        function refreshDrawing() {
+            drawMasterpiece();
+        }
+        
+        // Первая отрисовка
+        refreshDrawing();
+        
+        // Кнопка обновления — генерирует новую "вариацию" штриховки и линий
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                refreshDrawing();
+            });
+        }
+        
+        // легкая адаптация при изменении масштаба окна не требуется,
+        // но на всякий случай перерисовываем, чтобы сохранить четкость
+        window.addEventListener('resize', () => {
+            refreshDrawing();
+        });
+    })();
+</script>
+</body>
+</html>
