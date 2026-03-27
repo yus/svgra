@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Мяч — 3D проекция на 2D поверхность</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            color: #5c4b3a;
+            background: rgba(250, 245, 235, 0.7);
+            backdrop-filter: blur(4px);
+            padding: 8px 16px;
+            width: fit-content;
+            margin: 0 auto;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            font-style: italic;
+        }
+        
+        #controls-note {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.4);
+            color: #ddd;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-family: monospace;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+        
+        @media (max-width: 600px) {
+            #info { font-size: 0.65rem; bottom: 12px; }
+            #controls-note { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        ⚪ 3D сфера → проекция на 2D | свет и тень — проекция объёма | взгляд достраивает пространство
+    </div>
+    <div id="controls-note">
+        🖱️ мышь — вращение камеры | правой — панорама
+    </div>
+
+    <!-- Подключаем Three.js и дополнения -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- Инициализация сцены, камеры, рендереров ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfef8ef); // тёплый светлый фон, как холст
+        scene.fog = new THREE.FogExp2(0xfef8ef, 0.0025); // лёгкая дымка для глубины
+
+        // Камера: перспективная, чтобы чувствовалась проекция 3D->2D
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 5);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;      // включаем карты теней для реалистичной проекции
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // мягкие тени
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // --- Управление камерой: зритель сам выбирает ракурс, видит проекцию мяча ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;          // инерция
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.target.set(0, 0.2, 0);
+        
+        // --- Освещение: единый источник, создающий объём и тень-проекцию ---
+        // Основной направленный свет (солнце) — сверху-слева-спереди
+        const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+        mainLight.position.set(3, 5, 2);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = false;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 8;
+        mainLight.shadow.camera.left = -3;
+        mainLight.shadow.camera.right = 3;
+        mainLight.shadow.camera.top = 3;
+        mainLight.shadow.camera.bottom = -3;
+        scene.add(mainLight);
+        
+        // Заполняющий мягкий свет снизу (рефлекс от поверхности)
+        const fillLight = new THREE.PointLight(0xe0d0bc, 0.35);
+        fillLight.position.set(0, -1.5, 1);
+        fillLight.castShadow = false;
+        scene.add(fillLight);
+        
+        // Контровой свет для подсветки края (объём)
+        const backLight = new THREE.PointLight(0xffe6c4, 0.4);
+        backLight.position.set(-1.5, 1.8, -2);
+        backLight.castShadow = false;
+        scene.add(backLight);
+        
+        // Лёгкий рассеянный свет, чтобы тени не были слишком чёрными
+        const ambientLight = new THREE.AmbientLight(0xefe4d4, 0.45);
+        scene.add(ambientLight);
+        
+        // --- Вспомогательная плоскость "пола", принимающая тень (невидимая для камеры, но тень видна) ---
+        // Плоскость, на которую падает тень — создаёт проекцию объёма на 2D поверхность
+        const shadowReceiver = new THREE.Mesh(
+            new THREE.PlaneGeometry(6, 6),
+            new THREE.ShadowMaterial({ opacity: 0.45, color: 0x5a4a3a, transparent: true, side: THREE.DoubleSide })
+        );
+        shadowReceiver.rotation.x = -Math.PI / 2;
+        shadowReceiver.position.y = -0.85;
+        shadowReceiver.receiveShadow = true;
+        scene.add(shadowReceiver);
+        
+        // --- МЯЧ: белая сфера с тонкой текстурой, объёмным материалом ---
+        // Используем физически более точный материал с шероховатостью, чтобы тени и свет выглядели естественно
+        const ballGeometry = new THREE.SphereGeometry(0.85, 128, 128);
+        
+        // Материал: почти белый, с легким теплым оттенком, реагирует на свет
+        const ballMaterial = new THREE.MeshStandardMaterial({
+            color: 0xfef5e8,
+            emissive: 0x000000,
+            roughness: 0.38,
+            metalness: 0.08,
+            flatShading: false,
+            side: THREE.DoubleSide  // для лёгкой просвечиваемости краёв, создаёт иллюзию воздуха
+        });
+        
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        ball.castShadow = true;
+        ball.receiveShadow = false;   // мяч не принимает тени, но отбрасывает их на пол
+        ball.position.set(0, 0.15, 0);
+        scene.add(ball);
+        
+        // --- Дополнительный акцент: едва заметные "летящие" точки вокруг мяча (намёк на пространство) ---
+        const particleCount = 180;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            // частицы вокруг мяча, в радиусе 1.3 - 1.9
+            const radiusP = 1.1 + Math.random() * 0.9;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            particlePositions[i*3] = Math.sin(phi) * Math.cos(theta) * radiusP;
+            particlePositions[i*3+1] = Math.sin(phi) * Math.sin(theta) * radiusP + 0.15;
+            particlePositions[i*3+2] = Math.cos(phi) * radiusP;
+        }
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xcbb894,
+            size: 0.012,
+            transparent: true,
+            opacity: 0.28,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+        
+        // --- Лёгкое "сияние" вокруг мяча (проекция атмосферы) ---
+        const glowGeometry = new THREE.SphereGeometry(0.92, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xfef0e0,
+            transparent: true,
+            opacity: 0.07,
+            side: THREE.BackSide
+        });
+        const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial);
+        scene.add(glowSphere);
+        
+        // --- Несколько абстрактных линий на "полу", чтобы подчеркнуть плоскость проекции ---
+        const gridHelper = new THREE.GridHelper(5.2, 20, 0xd8cbb8, 0xe5d8c8);
+        gridHelper.position.y = -0.84;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.22;
+        scene.add(gridHelper);
+        
+        // Тонкий круг под мячом — намёк на "пятно контакта"
+        const contactRingGeometry = new THREE.RingGeometry(0.65, 0.85, 32);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: 0xdac09e,
+            emissive: 0x2a241c,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        const contactRing = new THREE.Mesh(contactRingGeometry, ringMaterial);
+        contactRing.rotation.x = -Math.PI / 2;
+        contactRing.position.y = -0.84;
+        scene.add(contactRing);
+        
+        // --- Анимация: частицы слегка вращаются, и мяч едва заметно "дышит" (радиус не меняется, но свет пульсирует?) ---
+        // Добавим лёгкую динамику света, чтобы подчеркнуть живое восприятие
+        let time = 0;
+        
+        // --- Текстовая метка CSS2D: философский намёк (не мешает, а добавляет слой) ---
+        const labelDiv = document.createElement('div');
+        labelDiv.textContent = '◯ проекция объёма ◯';
+        labelDiv.style.color = '#a48e72';
+        labelDiv.style.fontSize = '12px';
+        labelDiv.style.fontStyle = 'italic';
+        labelDiv.style.fontFamily = 'monospace';
+        labelDiv.style.background = 'rgba(250,245,235,0.5)';
+        labelDiv.style.padding = '2px 10px';
+        labelDiv.style.borderRadius = '30px';
+        labelDiv.style.backdropFilter = 'blur(4px)';
+        labelDiv.style.pointerEvents = 'none';
+        const labelObj = new CSS2DObject(labelDiv);
+        labelObj.position.set(0, 1.25, 0);
+        scene.add(labelObj);
+        
+        const css2DRenderer = new CSS2DRenderer();
+        css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        css2DRenderer.domElement.style.position = 'absolute';
+        css2DRenderer.domElement.style.top = '0px';
+        css2DRenderer.domElement.style.left = '0px';
+        css2DRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(css2DRenderer.domElement);
+        
+        // --- Лёгкая вспомогательная линия, показывающая направление света (опционально, но добавляет "схему") ---
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 1.2, 0.6).normalize(), new THREE.Vector3(1.5, 1.2, 1.2), 1.2, 0xdac09e, 0.5, 0.4);
+        arrowHelper.line.material.transparent = true;
+        arrowHelper.line.material.opacity = 0.18;
+        arrowHelper.cone.material.transparent = true;
+        arrowHelper.cone.material.opacity = 0.2;
+        scene.add(arrowHelper);
+        
+        // --- Простая анимация: частицы медленно вращаются, свет слегка меняет интенсивность ---
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.008;
+            
+            // Едва заметное движение частиц (вращение вокруг оси Y)
+            particles.rotation.y = time * 0.12;
+            particles.rotation.x = Math.sin(time * 0.2) * 0.08;
+            
+            // Лёгкое изменение интенсивности основного света (как "дыхание" восприятия)
+            const intensityVar = 0.95 + Math.sin(time * 0.7) * 0.045;
+            mainLight.intensity = Math.min(1.28, Math.max(1.05, intensityVar));
+            
+            // Мягкое вращение кольца контакта
+            contactRing.rotation.z = time * 0.08;
+            
+            // Обновляем управление и рендерим
+            controls.update(); // обновляем камеру, если было взаимодействие
+            
+            renderer.render(scene, camera);
+            css2DRenderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // --- Адаптация под размер окна (сохраняем проекцию) ---
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Небольшой console.log, как диалог со зрителем
+        console.log('3D сфера проецируется на 2D экран. Тень — проекция объёма. Вы — зритель, завершающий пространство.');
+    </script>
+</body>
+</html>
