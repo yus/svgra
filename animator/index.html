@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SVGRA аниматор — 3D проекция мяча</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', 'Segoe UI', 'Georgia', system-ui, -apple-system, sans-serif;
+        }
+
+        /* ----- Панель параметров (сворачиваемая) ----- */
+        .controls-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(30, 25, 22, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            border: 1px solid rgba(220, 200, 170, 0.25);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            color: #f5ede0;
+            font-size: 0.85rem;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 18px;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 28px;
+            transition: background 0.2s;
+        }
+        .panel-header:hover {
+            background: rgba(50, 42, 36, 0.6);
+        }
+        .panel-title {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-title span {
+            font-size: 1.1rem;
+        }
+        .toggle-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+            line-height: 1;
+        }
+        .panel-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.2s;
+            padding: 0 18px;
+        }
+        .controls-panel.expanded .panel-content {
+            max-height: 380px;
+            padding: 0 18px 18px 18px;
+        }
+        .controls-panel.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* элементы управления */
+        .control-group {
+            margin-bottom: 16px;
+        }
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #e2d4c4;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            background: #3e352c;
+            height: 3px;
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #f0cf9c;
+            cursor: pointer;
+            border: none;
+        }
+        .value-display {
+            font-size: 0.7rem;
+            background: #2a241f;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-family: monospace;
+        }
+        .separator {
+            height: 1px;
+            background: rgba(220, 200, 170, 0.25);
+            margin: 12px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #cfc2b0;
+            margin-top: 8px;
+        }
+        .help-btn {
+            background: none;
+            border: 1px solid rgba(220, 200, 170, 0.5);
+            color: #e2cfb3;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .help-btn:hover {
+            background: rgba(220, 200, 170, 0.2);
+            color: white;
+        }
+
+        /* Модальное окно */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 18, 16, 0.85);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background: #2c2620;
+            max-width: 320px;
+            width: 80%;
+            padding: 24px;
+            border-radius: 32px;
+            color: #f0e6d8;
+            border: 1px solid #b9a582;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            font-family: 'Georgia', serif;
+            letter-spacing: 1px;
+        }
+        .modal-content p {
+            margin: 12px 0;
+        }
+        .close-modal {
+            background: #b9a582;
+            border: none;
+            color: #1f1b17;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .close-modal:hover {
+            background: #ddc29e;
+        }
+
+        @media (max-width: 640px) {
+            .controls-panel {
+                bottom: 12px;
+                left: 12px;
+                right: auto;
+                max-width: calc(100% - 24px);
+            }
+            .panel-header {
+                padding: 10px 16px;
+            }
+            .panel-title {
+                font-size: 0.8rem;
+            }
+            .control-group label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Сворачиваемая панель параметров -->
+    <div class="controls-panel" id="controlsPanel">
+        <div class="panel-header" id="panelHeader">
+            <div class="panel-title">
+                <span>🎛️</span> параметры сцены
+            </div>
+            <div class="toggle-icon">▼</div>
+        </div>
+        <div class="panel-content">
+            <div class="control-group">
+                <label>💡 светосила <span id="intensityVal" class="value-display">1.18</span></label>
+                <input type="range" id="lightIntensity" min="0.4" max="2.0" step="0.01" value="1.18">
+            </div>
+            <div class="control-group">
+                <label>🌫️ смягчение тени <span id="shadowSoftVal" class="value-display">0.65</span></label>
+                <input type="range" id="shadowSoftness" min="0.2" max="1.5" step="0.01" value="0.65">
+            </div>
+            <div class="separator"></div>
+            <div class="info-row">
+                <span>🖱️ мышь — вращение</span>
+                <span>🖱️ правая — панорама</span>
+            </div>
+            <div class="info-row" style="margin-top: 8px;">
+                <button id="helpButton" class="help-btn">❔ о проекции</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с пояснениями -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3>◯ проекция объёма</h3>
+            <p>3D сфера отбрасывает реальную тень на плоскость — это <strong>проекция трёхмерного объекта на двухмерную поверхность</strong> экрана.</p>
+            <p>Свет и тень не «нарисованы», а вычисляются физически. Зритель видит объём благодаря光源у и теням, а не контуру.</p>
+            <p>Параметры «светосила» и «смягчение тени» управляют характером освещения — от графичного до фотографичного.</p>
+            <button class="close-modal" id="closeModal">понятно</button>
+        </div>
+    </div>
+
+    <!-- Импорт Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- Инициализация сцены (сохранена идеальная компоновка) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfef8ef);
+        scene.fog = new THREE.FogExp2(0xfef8ef, 0.0025);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 5);
+        camera.lookAt(0, 0.2, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // --- Орбит контрол (взаимодействие) ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.target.set(0, 0.2, 0);
+
+        // --- Освещение (будем управлять интенсивностью и мягкостью тени) ---
+        // Основной направленный свет
+        const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.18);
+        mainLight.position.set(3, 5, 2);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = false;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 8;
+        mainLight.shadow.camera.left = -3;
+        mainLight.shadow.camera.right = 3;
+        mainLight.shadow.camera.top = 3;
+        mainLight.shadow.camera.bottom = -3;
+        scene.add(mainLight);
+        
+        // Заполняющий свет снизу (рефлекс)
+        const fillLight = new THREE.PointLight(0xe0d0bc, 0.35);
+        fillLight.position.set(0, -1.5, 1);
+        fillLight.castShadow = false;
+        scene.add(fillLight);
+        
+        // Контровой свет
+        const backLight = new THREE.PointLight(0xffe6c4, 0.4);
+        backLight.position.set(-1.5, 1.8, -2);
+        backLight.castShadow = false;
+        scene.add(backLight);
+        
+        const ambientLight = new THREE.AmbientLight(0xefe4d4, 0.45);
+        scene.add(ambientLight);
+        
+        // --- Плоскость, принимающая тень (проекция) ---
+        const shadowReceiver = new THREE.Mesh(
+            new THREE.PlaneGeometry(6, 6),
+            new THREE.ShadowMaterial({ opacity: 0.45, color: 0x5a4a3a, transparent: true, side: THREE.DoubleSide })
+        );
+        shadowReceiver.rotation.x = -Math.PI / 2;
+        shadowReceiver.position.y = -0.85;
+        shadowReceiver.receiveShadow = true;
+        scene.add(shadowReceiver);
+        
+        // --- Мяч ---
+        const ballGeometry = new THREE.SphereGeometry(0.85, 128, 128);
+        const ballMaterial = new THREE.MeshStandardMaterial({
+            color: 0xfef5e8,
+            roughness: 0.38,
+            metalness: 0.08,
+            side: THREE.DoubleSide
+        });
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        ball.castShadow = true;
+        ball.receiveShadow = false;
+        ball.position.set(0, 0.15, 0);
+        scene.add(ball);
+        
+        // --- Частицы (намёк на пространство) ---
+        const particleCount = 180;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            const radiusP = 1.1 + Math.random() * 0.9;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            particlePositions[i*3] = Math.sin(phi) * Math.cos(theta) * radiusP;
+            particlePositions[i*3+1] = Math.sin(phi) * Math.sin(theta) * radiusP + 0.15;
+            particlePositions[i*3+2] = Math.cos(phi) * radiusP;
+        }
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xcbb894,
+            size: 0.012,
+            transparent: true,
+            opacity: 0.28,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+        
+        // --- Лёгкое свечение ---
+        const glowGeometry = new THREE.SphereGeometry(0.92, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xfef0e0,
+            transparent: true,
+            opacity: 0.07,
+            side: THREE.BackSide
+        });
+        const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial);
+        scene.add(glowSphere);
+        
+        // --- Декоративный грид и кольцо ---
+        const gridHelper = new THREE.GridHelper(5.2, 20, 0xd8cbb8, 0xe5d8c8);
+        gridHelper.position.y = -0.84;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.22;
+        scene.add(gridHelper);
+        
+        const contactRingGeometry = new THREE.RingGeometry(0.65, 0.85, 32);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: 0xdac09e,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        const contactRing = new THREE.Mesh(contactRingGeometry, ringMaterial);
+        contactRing.rotation.x = -Math.PI / 2;
+        contactRing.position.y = -0.84;
+        scene.add(contactRing);
+        
+        // --- CSS2DRenderer для текстового слоя (убираем основной текст в панель, но оставляем легкий акцент) ---
+        const css2DRenderer = new CSS2DRenderer();
+        css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        css2DRenderer.domElement.style.position = 'absolute';
+        css2DRenderer.domElement.style.top = '0px';
+        css2DRenderer.domElement.style.left = '0px';
+        css2DRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(css2DRenderer.domElement);
+        
+        // Маленькая метка (минимальная, не мешает)
+        const subtleDiv = document.createElement('div');
+        subtleDiv.textContent = '⚪ проекция';
+        subtleDiv.style.color = '#b8a07e';
+        subtleDiv.style.fontSize = '9px';
+        subtleDiv.style.opacity = '0.5';
+        subtleDiv.style.fontFamily = 'monospace';
+        subtleDiv.style.background = 'none';
+        const subtleLabel = new CSS2DObject(subtleDiv);
+        subtleLabel.position.set(0, 1.28, 0);
+        scene.add(subtleLabel);
+        
+        // --- Стрелка направления света (декоративная) ---
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(1, 1.2, 0.6).normalize(), new THREE.Vector3(1.5, 1.2, 1.2), 1.2, 0xdac09e, 0.5, 0.4);
+        arrowHelper.line.material.transparent = true;
+        arrowHelper.line.material.opacity = 0.18;
+        arrowHelper.cone.material.transparent = true;
+        arrowHelper.cone.material.opacity = 0.2;
+        scene.add(arrowHelper);
+        
+        // --- Анимация (динамика частиц и легкое изменение интенсивности для жизни) ---
+        let time = 0;
+        
+        // --- ПАРАМЕТРЫ УПРАВЛЕНИЯ ИЗ ПАНЕЛИ ---
+        // Элементы DOM
+        const intensitySlider = document.getElementById('lightIntensity');
+        const intensityVal = document.getElementById('intensityVal');
+        const shadowSlider = document.getElementById('shadowSoftness');
+        const shadowSoftVal = document.getElementById('shadowSoftVal');
+        const panel = document.getElementById('controlsPanel');
+        const panelHeader = document.getElementById('panelHeader');
+        const helpBtn = document.getElementById('helpButton');
+        const modal = document.getElementById('modal');
+        const closeModalBtn = document.getElementById('closeModal');
+        
+        // Текущее значение мягкости тени влияет на shadowmap param (PCFSoftness можно менять через свойство света, но для плавности используем коэффициент размера камеры тени и тип)
+        // Для реального смягчения тени динамически меняем размер карты и параметры камеры тени (эффект "мягкости")
+        function updateShadowSoftness(value) {
+            // value от 0.2 до 1.5, влияем на размер камеры тени и размытие
+            const softFactor = Math.max(0.4, Math.min(1.6, value));
+            // меняем область захвата тени для более мягкого/жёсткого края
+            const newSize = 2.5 + (1.2 - softFactor) * 1.2;
+            mainLight.shadow.camera.left = -newSize;
+            mainLight.shadow.camera.right = newSize;
+            mainLight.shadow.camera.top = newSize;
+            mainLight.shadow.camera.bottom = -newSize;
+            mainLight.shadow.camera.updateProjectionMatrix();
+            // Также влияем на непрозрачность материала тени для эффекта мягкости
+            if (shadowReceiver.material) {
+                const baseOpacity = 0.45;
+                const newOpacity = Math.min(0.65, Math.max(0.28, baseOpacity * (1.2 - (softFactor - 0.6) * 0.3)));
+                shadowReceiver.material.opacity = newOpacity;
+            }
+            shadowSoftVal.innerText = value.toFixed(2);
+        }
+        
+        function updateLightIntensity(value) {
+            mainLight.intensity = parseFloat(value);
+            intensityVal.innerText = value;
+        }
+        
+        // События слайдеров
+        intensitySlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            updateLightIntensity(val);
+        });
+        shadowSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            updateShadowSoftness(val);
+        });
+        
+        // Инициализация значений по умолчанию
+        updateLightIntensity(intensitySlider.value);
+        updateShadowSoftness(parseFloat(shadowSlider.value));
+        
+        // Сворачивание панели
+        panelHeader.addEventListener('click', () => {
+            panel.classList.toggle('expanded');
+        });
+        
+        // Модальное окно
+        function openModal() {
+            modal.classList.add('active');
+        }
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+        helpBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        
+        // --- Анимационный цикл ---
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.008;
+            
+            // Лёгкое вращение частиц
+            particles.rotation.y = time * 0.12;
+            particles.rotation.x = Math.sin(time * 0.2) * 0.08;
+            contactRing.rotation.z = time * 0.08;
+            
+            // Небольшая динамика заполняющего света для атмосферы
+            fillLight.intensity = 0.35 + Math.sin(time * 0.5) * 0.04;
+            
+            controls.update();
+            renderer.render(scene, camera);
+            css2DRenderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Адаптация под размер окна
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Панель по умолчанию раскрыта на десктопе, но на мобильном лучше свернуть для чистоты
+        if (window.innerWidth <= 640) {
+            panel.classList.remove('expanded');
+        } else {
+            panel.classList.add('expanded');
+        }
+        
+        console.log('SVGRA аниматор запущен. 3D проекция мяча с управляемыми параметрами.');
+    </script>
+</body>
+</html>
