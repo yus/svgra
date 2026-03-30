@@ -3,656 +3,698 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SVG Animator | Manipulate & Animate Vector Graphics</title>
+    <title>SVG Studio Pro | Object Manager & Animation Suite</title>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            user-select: none; /* better UX for sliders, but text select allowed where needed */
         }
 
         body {
-            background: linear-gradient(145deg, #10141c 0%, #0b0e14 100%);
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0c12 0%, #0f1119 100%);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Main layout */
+        .app {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 24px;
+            height: 100vh;
+            width: 100vw;
         }
 
-        /* main app card */
-        .app-container {
-            max-width: 1400px;
-            width: 100%;
-            background: rgba(22, 28, 38, 0.75);
-            backdrop-filter: blur(2px);
-            border-radius: 2.5rem;
-            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
-            padding: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin: 0 0 0.2rem 0;
-            background: linear-gradient(135deg, #E9F1FF, #A5C9FF);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.3px;
-        }
-
-        .sub {
-            color: #8f9bb3;
-            margin-bottom: 1.8rem;
-            border-left: 3px solid #3b82f6;
-            padding-left: 12px;
-            font-size: 0.9rem;
-        }
-
-        /* two column layout */
-        .dashboard {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.8rem;
-        }
-
-        .editor-panel {
-            flex: 1.2;
-            min-width: 260px;
-            background: #11161fcc;
-            backdrop-filter: blur(4px);
-            border-radius: 1.8rem;
-            padding: 1.2rem;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .canvas-panel {
-            flex: 2.5;
-            min-width: 320px;
-            background: #0f131ccc;
-            border-radius: 1.8rem;
-            padding: 1rem;
-            backdrop-filter: blur(2px);
-            border: 1px solid rgba(255,255,255,0.05);
+        /* Sidebar - Object Menu & Properties */
+        .sidebar {
+            width: 320px;
+            background: rgba(18, 22, 32, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            z-index: 10;
         }
 
-        .svg-stage {
-            background: #ffffff0d;
-            border-radius: 1.2rem;
+        /* Object Menu Section */
+        .object-menu-section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8b9bcf;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .objects-list {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 420px;
-            transition: all 0.2s;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
         }
 
-        svg {
-            background: #fefcf0;
-            border-radius: 24px;
-            box-shadow: 0 12px 28px -8px rgba(0,0,0,0.4);
-            width: 100%;
-            height: auto;
+        .object-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
             cursor: pointer;
-            transition: filter 0.2s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        svg:active {
-            cursor: grabbing;
+        .object-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            transform: translateX(4px);
         }
 
-        .control-group {
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #2a2f3a;
-            padding-bottom: 1rem;
+        .object-item.selected {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.1));
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
         }
 
-        .control-label {
+        .object-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .object-info {
+            flex: 1;
+        }
+
+        .object-name {
+            font-weight: 600;
+            color: #e2e8ff;
+            font-size: 14px;
+        }
+
+        .object-type {
+            font-size: 10px;
+            color: #8b9bcf;
+            margin-top: 2px;
+        }
+
+        .visibility-toggle {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .visibility-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .property-group {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .property-label {
+            color: #cdd9ff;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
-            color: #cdd9ff;
-            font-weight: 500;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.3px;
         }
 
         input, select {
             width: 100%;
             background: #0a0e14;
             border: 1px solid #2c3442;
-            padding: 0.6rem 0.8rem;
-            border-radius: 1rem;
+            padding: 8px 12px;
+            border-radius: 10px;
             color: white;
-            font-size: 0.85rem;
-            transition: all 0.2s;
+            font-size: 13px;
         }
 
         input[type="range"] {
             padding: 0;
-            height: 5px;
+            height: 4px;
             background: #2a2f3a;
-            accent-color: #3b82f6;
         }
 
         button {
             background: #1e293b;
-            border: none;
-            padding: 0.55rem 1rem;
-            border-radius: 2rem;
+            border: 1px solid #334155;
+            padding: 8px 16px;
+            border-radius: 10px;
             color: white;
             font-weight: 500;
-            font-size: 0.8rem;
             cursor: pointer;
-            transition: 0.15s;
-            border: 1px solid #334155;
+            transition: 0.2s;
         }
 
         button.primary {
             background: #3b82f6;
             border-color: #60a5fa;
-            box-shadow: 0 2px 6px rgba(59,130,246,0.3);
         }
 
         button.primary:hover {
             background: #2563eb;
-            transform: scale(0.97);
-        }
-
-        button:hover {
-            background: #2d3a4e;
+            transform: translateY(-1px);
         }
 
         .flex-row {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 8px;
             margin-top: 8px;
         }
 
-        .color-preview {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            border-radius: 30px;
-            border: 2px solid white;
-            margin-left: 8px;
-            vertical-align: middle;
-            box-shadow: 0 1px 4px black;
+        /* Canvas Area - Expanded Workspace */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #1a1e2a;
+        }
+
+        .workspace {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 800px;
+            background: 
+                radial-gradient(circle at 20% 30%, #2a2f3f, #141824),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px black;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            overflow: visible;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+
+        .controls-bar {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 12px 20px;
+            border-radius: 40px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
         }
 
         .badge {
-            background: #00000066;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
+            background: #00000099;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
             font-family: monospace;
         }
 
-        .anim-controls {
-            background: #070b10;
-            border-radius: 1.2rem;
-            padding: 0.8rem;
-            margin-top: 1rem;
+        ::-webkit-scrollbar {
+            width: 6px;
         }
 
-        hr {
-            border-color: #2a2f3a;
-            margin: 12px 0;
+        ::-webkit-scrollbar-track {
+            background: #0a0e14;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        .playing-badge {
-            color: #22c55e;
-            font-weight: bold;
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
-<div class="app-container">
-    <h1>✧ SVG Motion Forge ✧</h1>
-    <div class="sub">Manipulate shapes · Animate transforms · Real-time keyframe motion</div>
-
-    <div class="dashboard">
-        <!-- LEFT: manipulation panel -->
-        <div class="editor-panel">
-            <div class="control-group">
-                <div class="control-label">🎯 TARGET ELEMENT</div>
-                <select id="targetSelect">
-                    <option value="star">⭐ Star (center)</option>
-                    <option value="circle">🔵 Circle</option>
-                    <option value="rect">⬛ Rectangle</option>
-                    <option value="groupPath">🌀 Group (Spiral)</option>
-                </select>
-            </div>
-
-            <div class="control-group">
-                <div class="control-label">📍 TRANSLATE X</div>
-                <input type="range" id="translateX" min="-120" max="120" step="1" value="0">
-                <span class="badge" id="txVal">0</span>
-                <div class="control-label">📍 TRANSLATE Y</div>
-                <input type="range" id="translateY" min="-120" max="120" step="1" value="0">
-                <span class="badge" id="tyVal">0</span>
-            </div>
-
-            <div class="control-group">
-                <div class="control-label">🔄 ROTATION (deg)</div>
-                <input type="range" id="rotate" min="-180" max="180" step="1" value="0">
-                <span class="badge" id="rotVal">0°</span>
-            </div>
-
-            <div class="control-group">
-                <div class="control-label">📏 SCALE</div>
-                <input type="range" id="scale" min="0.3" max="2.2" step="0.01" value="1">
-                <span class="badge" id="scaleVal">1.00</span>
-            </div>
-
-            <div class="control-group">
-                <div class="control-label">🎨 FILL COLOR</div>
-                <div class="flex-row">
-                    <input type="color" id="fillColor" value="#FFB347">
-                    <span id="colorSwatch" class="color-preview" style="background:#FFB347"></span>
-                </div>
-                <div class="control-label">✏️ STROKE WIDTH</div>
-                <input type="range" id="strokeWidth" min="0" max="8" step="0.5" value="2">
-                <span class="badge" id="swVal">2</span>
-            </div>
-
-            <div class="control-group">
-                <div class="control-label">✨ ANIMATION ENGINE</div>
-                <div class="flex-row">
-                    <button id="playAnimBtn" class="primary">▶ PLAY LOOP</button>
-                    <button id="stopAnimBtn">⏹️ STOP</button>
-                    <button id="resetTransformBtn">⟳ RESET XFORM</button>
-                </div>
-                <div style="margin-top: 8px;">
-                    <div class="control-label">🌀 ANIMATION TYPE</div>
-                    <select id="animTypeSelect">
-                        <option value="orbit">🌍 Orbit (Circle Motion)</option>
-                        <option value="bounce">🏀 Bounce Yoyo</option>
-                        <option value="spinScale">💫 Spin + Scale Pulse</option>
-                        <option value="wobble">🎢 Wobble Skew</option>
-                    </select>
-                </div>
-                <div class="control-label">⚡ SPEED (ms/step)</div>
-                <input type="range" id="animSpeed" min="10" max="80" step="2" value="28">
-                <span class="badge" id="speedVal">28ms</span>
+<div class="app">
+    <!-- Sidebar: Object Menu + Properties -->
+    <div class="sidebar">
+        <div class="object-menu-section">
+            <div class="section-title">📦 OBJECT MENU</div>
+            <div class="objects-list" id="objectsList"></div>
+            <div class="flex-row" style="margin-top: 16px;">
+                <button id="addObjectBtn" style="flex: 1;">➕ Add Object</button>
+                <button id="duplicateBtn" style="flex: 1;">📋 Duplicate</button>
             </div>
         </div>
 
-        <!-- RIGHT: SVG canvas & preview -->
-        <div class="canvas-panel">
-            <div class="svg-stage" id="svgStage">
-                <svg id="mainSvg" viewBox="0 0 500 400" width="100%" height="auto" style="background: radial-gradient(circle at 30% 20%, #fff8e7, #fff1d6);">
-                    <!-- definitions and groups -->
-                    <defs>
-                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-                            <feMerge>
-                                <feMergeNode in="offsetblur" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                    </defs>
-                    
-                    <!-- star element -->
-                    <polygon id="star" points="100,70 110,100 140,100 115,120 125,150 100,130 75,150 85,120 60,100 90,100" fill="#FFB347" stroke="#6b3e00" stroke-width="2" stroke-linecap="round" />
+        <div class="properties-panel">
+            <div class="section-title">⚙️ SELECTED OBJECT PROPERTIES</div>
+            
+            <div class="property-group">
+                <div class="property-label">🎯 TRANSFORM</div>
+                <div class="property-label">X: <span id="posX">0</span></div>
+                <input type="range" id="posXSlider" min="-400" max="400" step="1" value="0">
+                <div class="property-label" style="margin-top: 8px;">Y: <span id="posY">0</span></div>
+                <input type="range" id="posYSlider" min="-400" max="400" step="1" value="0">
+                <div class="property-label">🔄 Rotation: <span id="rotVal">0</span>°</div>
+                <input type="range" id="rotSlider" min="-180" max="180" step="1" value="0">
+                <div class="property-label">📏 Scale: <span id="scaleVal">1.00</span></div>
+                <input type="range" id="scaleSlider" min="0.2" max="3" step="0.01" value="1">
+            </div>
 
-                    <!-- circle element -->
-                    <circle id="circle" cx="150" cy="180" r="28" fill="#5dade2" stroke="#2c3e50" stroke-width="2" visibility="visible" />
-                    
-                    <!-- rectangle -->
-                    <rect id="rect" x="210" y="250" width="64" height="64" fill="#58d68d" stroke="#186a3b" stroke-width="2" rx="8" visibility="visible" />
-                    
-                    <!-- group: spiral path + extra flair -->
-                    <g id="groupPath" visibility="visible">
-                        <path d="M 320,120 C 340,100 360,130 350,160 C 340,190 310,200 290,180 C 280,165 285,145 305,140 C 320,138 335,150 330,170" fill="#a569bd" stroke="#4a235a" stroke-width="2.5" />
-                        <circle cx="332" cy="152" r="6" fill="#f4d03f" stroke="#b7950b" />
-                        <path d="M 348,128 L 360,118 L 368,128" fill="none" stroke="#f1c40f" stroke-width="2"/>
-                    </g>
-                </svg>
+            <div class="property-group">
+                <div class="property-label">🎨 APPEARANCE</div>
+                <div class="property-label">Fill Color</div>
+                <input type="color" id="fillColor" value="#FF6B6B">
+                <div class="property-label" style="margin-top: 8px;">Stroke Width: <span id="strokeVal">2</span></div>
+                <input type="range" id="strokeWidth" min="0" max="8" step="0.5" value="2">
+                <div class="property-label">Stroke Color</div>
+                <input type="color" id="strokeColor" value="#2c3e50">
             </div>
-            <div class="anim-controls">
-                <div style="display: flex; justify-content: space-between;">
-                    <span>🕹️ <span id="animStatus">● Stopped</span></span>
-                    <span class="playing-badge" id="activeAnimLabel">Manual transform</span>
-                </div>
-                <div class="flex-row" style="justify-content: flex-end; margin-top: 6px;">
-                    <button id="captureFrameBtn">📸 Snapshot (Log style)</button>
-                    <button id="resetAllBtn">🔄 Reset All (SVG)</button>
+
+            <div class="property-group">
+                <div class="property-label">✨ ANIMATION (per object)</div>
+                <select id="animTypeSelect">
+                    <option value="none">🚫 No Animation</option>
+                    <option value="orbit">🌍 Orbit Motion</option>
+                    <option value="bounce">🏀 Bounce</option>
+                    <option value="spin">💫 Continuous Spin</option>
+                    <option value="pulse">❤️ Pulse Scale</option>
+                    <option value="wobble">🎢 Wobble</option>
+                </select>
+                <div class="property-label">Speed: <span id="animSpeedVal">1.0</span></div>
+                <input type="range" id="animSpeed" min="0.5" max="3" step="0.1" value="1">
+                <div class="flex-row" style="margin-top: 12px;">
+                    <button id="applyAnimBtn" class="primary" style="flex:1;">▶ Apply Animation</button>
+                    <button id="stopAnimBtn" style="flex:1;">⏹️ Stop</button>
                 </div>
             </div>
-            <small style="color:#6c7a91; margin-top: 10px; display: block; text-align: center;">click + drag on SVG not needed — use sliders or animation</small>
+        </div>
+    </div>
+
+    <!-- Canvas Area with Expanded Workspace -->
+    <div class="canvas-area">
+        <div class="workspace">
+            <svg id="mainSvg" viewBox="-600 -400 1200 800" style="background: #faf9f8;">
+                <!-- Objects will be dynamically added here -->
+            </svg>
+        </div>
+        <div class="controls-bar">
+            <span id="animGlobalStatus" class="badge">● Idle</span>
+            <button id="resetCameraBtn">🎯 Reset View</button>
+            <button id="exportBtn">💾 Export SVG</button>
         </div>
     </div>
 </div>
 
 <script>
-    (function(){
-        // ---------- DOM Elements ----------
-        const svg = document.getElementById('mainSvg');
-        const starElem = document.getElementById('star');
-        const circleElem = document.getElementById('circle');
-        const rectElem = document.getElementById('rect');
-        const groupElem = document.getElementById('groupPath');
-        
-        const targetSelect = document.getElementById('targetSelect');
-        const translateXSlider = document.getElementById('translateX');
-        const translateYSlider = document.getElementById('translateY');
-        const rotateSlider = document.getElementById('rotate');
-        const scaleSlider = document.getElementById('scale');
-        const fillColorPicker = document.getElementById('fillColor');
-        const strokeWidthSlider = document.getElementById('strokeWidth');
-        
-        const txVal = document.getElementById('txVal');
-        const tyVal = document.getElementById('tyVal');
-        const rotVal = document.getElementById('rotVal');
-        const scaleVal = document.getElementById('scaleVal');
-        const swVal = document.getElementById('swVal');
-        const colorSwatch = document.getElementById('colorSwatch');
-        
-        const playBtn = document.getElementById('playAnimBtn');
-        const stopBtn = document.getElementById('stopAnimBtn');
-        const resetTransformBtn = document.getElementById('resetTransformBtn');
-        const resetAllBtn = document.getElementById('resetAllBtn');
-        const captureBtn = document.getElementById('captureFrameBtn');
-        const animTypeSelect = document.getElementById('animTypeSelect');
-        const animSpeedSlider = document.getElementById('animSpeed');
-        const speedValSpan = document.getElementById('speedVal');
-        const animStatusSpan = document.getElementById('animStatus');
-        const activeAnimLabel = document.getElementById('activeAnimLabel');
-        
-        // ----- state -----
-        let currentTargetId = "star";    // star, circle, rect, groupPath
-        let animationFrameId = null;      // requestAnimationFrame id (smooth loop)
-        let animationActive = false;
-        let animClock = 0;                // time variable in radians or phase
-        let lastTimestamp = 0;
-        let animationSpeedMs = 28;        // affects step per frame roughly using delta time, but we'll do classic incremental phase
-        // For smoothness, we'll use requestAnimationFrame and update phase based on delta time & speed factor.
-        let phase = 0;                    // radians used for all animation types
-        
-        // target transform values from sliders (manual mode)
-        let manualTx = 0, manualTy = 0, manualRot = 0, manualScale = 1;
-        
-        // function to get current active element
-        function getCurrentElement() {
-            switch(currentTargetId) {
-                case "star": return starElem;
-                case "circle": return circleElem;
-                case "rect": return rectElem;
-                case "groupPath": return groupElem;
-                default: return starElem;
+    // Object Manager
+    class SVGObject {
+        constructor(id, type, name, x, y, fill, stroke, strokeWidth) {
+            this.id = id;
+            this.type = type;
+            this.name = name;
+            this.x = x;
+            this.y = y;
+            this.rotation = 0;
+            this.scale = 1;
+            this.fill = fill;
+            this.stroke = stroke;
+            this.strokeWidth = strokeWidth;
+            this.visible = true;
+            this.animation = {
+                type: 'none',
+                speed: 1,
+                phase: 0,
+                active: false
+            };
+        }
+
+        createSVGElement() {
+            let elem;
+            switch(this.type) {
+                case 'star':
+                    elem = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    elem.setAttribute("points", "0,-25 10,-8 28,-8 16,3 22,25 0,15 -22,25 -16,3 -28,-8 -10,-8");
+                    break;
+                case 'circle':
+                    elem = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    elem.setAttribute("r", "25");
+                    break;
+                case 'rect':
+                    elem = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    elem.setAttribute("width", "50");
+                    elem.setAttribute("height", "50");
+                    elem.setAttribute("rx", "8");
+                    break;
+                case 'triangle':
+                    elem = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    elem.setAttribute("points", "0,-28 24,14 -24,14");
+                    break;
+                default:
+                    elem = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    elem.setAttribute("r", "25");
             }
+            elem.setAttribute("fill", this.fill);
+            elem.setAttribute("stroke", this.stroke);
+            elem.setAttribute("stroke-width", this.strokeWidth);
+            elem.setAttribute("data-id", this.id);
+            return elem;
         }
-        
-        // apply transform & fill/stroke to selected element (preserve others untouched)
-        function applyTransformAndStyleToElement(element, tx, ty, rot, scaleVal) {
-            if (!element) return;
-            const transform = `translate(${tx}, ${ty}) rotate(${rot}) scale(${scaleVal})`;
-            element.setAttribute('transform', transform);
+
+        updateTransform(elem) {
+            const transform = `translate(${this.x}, ${this.y}) rotate(${this.rotation}) scale(${this.scale})`;
+            elem.setAttribute("transform", transform);
         }
-        
-        // apply fill & stroke width to current element only
-        function applyFillAndStroke() {
-            const elem = getCurrentElement();
-            if (!elem) return;
-            const newFill = fillColorPicker.value;
-            const newStrokeWidth = parseFloat(strokeWidthSlider.value);
-            elem.setAttribute('fill', newFill);
-            elem.setAttribute('stroke-width', newStrokeWidth);
-            colorSwatch.style.backgroundColor = newFill;
-            swVal.innerText = newStrokeWidth;
+    }
+
+    class SVGManager {
+        constructor(svgElement) {
+            this.svg = svgElement;
+            this.objects = new Map();
+            this.nextId = 1;
+            this.selectedId = null;
+            this.animationFrame = null;
+            this.initDefaultObjects();
+            this.startGlobalAnimation();
         }
-        
-        // manual update from sliders (if animation not active, we push sliders to element)
-        function updateFromSliders() {
-            if (animationActive) return; // animation overrides transforms
-            manualTx = parseFloat(translateXSlider.value);
-            manualTy = parseFloat(translateYSlider.value);
-            manualRot = parseFloat(rotateSlider.value);
-            manualScale = parseFloat(scaleSlider.value);
-            
-            txVal.innerText = manualTx;
-            tyVal.innerText = manualTy;
-            rotVal.innerText = manualRot + "°";
-            scaleVal.innerText = manualScale.toFixed(2);
-            
-            const elem = getCurrentElement();
-            if (elem) {
-                applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
+
+        initDefaultObjects() {
+            this.addObject('star', 'Star 1', -200, -150, '#FF6B6B', '#c0392b', 2);
+            this.addObject('circle', 'Circle 1', 250, -100, '#4ECDC4', '#2c3e50', 2);
+            this.addObject('rect', 'Box 1', -180, 200, '#95E77E', '#27ae60', 2);
+            this.addObject('triangle', 'Triangle 1', 220, 180, '#FFE66D', '#e67e22', 2);
+        }
+
+        addObject(type, name, x, y, fill, stroke, strokeWidth) {
+            const id = this.nextId++;
+            const obj = new SVGObject(id, type, name, x, y, fill, stroke, strokeWidth);
+            this.objects.set(id, obj);
+            this.renderObject(obj);
+            this.updateUI();
+            return id;
+        }
+
+        renderObject(obj) {
+            let elem = this.svg.querySelector(`[data-id="${obj.id}"]`);
+            if (!elem) {
+                elem = obj.createSVGElement();
+                elem.setAttribute("data-id", obj.id);
+                this.svg.appendChild(elem);
             }
-            applyFillAndStroke(); // fill & stroke always live regardless of anim
+            obj.updateTransform(elem);
+            elem.setAttribute("visibility", obj.visible ? "visible" : "hidden");
+            elem.setAttribute("fill", obj.fill);
+            elem.setAttribute("stroke", obj.stroke);
+            elem.setAttribute("stroke-width", obj.strokeWidth);
         }
-        
-        // reset transforms (sliders reset, manual mode)
-        function resetTransforms() {
-            if (animationActive) stopAnimation();
-            translateXSlider.value = "0";
-            translateYSlider.value = "0";
-            rotateSlider.value = "0";
-            scaleSlider.value = "1";
-            updateFromSliders();
+
+        updateObjectProperties(id, updates) {
+            const obj = this.objects.get(id);
+            if (!obj) return;
+            Object.assign(obj, updates);
+            this.renderObject(obj);
+            this.updateUI();
         }
-        
-        // full reset all svg attributes to base plus visibility
-        function fullReset() {
-            stopAnimation();
-            // reset target selection to star
-            targetSelect.value = "star";
-            changeTarget("star");
-            // reset sliders to defaults
-            translateXSlider.value = "0";
-            translateYSlider.value = "0";
-            rotateSlider.value = "0";
-            scaleSlider.value = "1";
-            fillColorPicker.value = "#FFB347";
-            strokeWidthSlider.value = "2";
-            // Force update current target
-            updateFromSliders();
-            // reset colors to default per element style? but current target gets fill, but all elements initial colors?
-            starElem.setAttribute("fill", "#FFB347");
-            circleElem.setAttribute("fill", "#5dade2");
-            rectElem.setAttribute("fill", "#58d68d");
-            groupElem.setAttribute("fill", "#a569bd");
-            groupElem.querySelector("circle")?.setAttribute("fill","#f4d03f");
-            // restore stroke width to base for all (just current element but also nice)
-            starElem.setAttribute("stroke-width","2");
-            circleElem.setAttribute("stroke-width","2");
-            rectElem.setAttribute("stroke-width","2");
-            groupElem.setAttribute("stroke-width","2.5");
-            // reapply transform removal: clear transforms on all elements
-            [starElem, circleElem, rectElem, groupElem].forEach(el => {
-                if(el) el.removeAttribute('transform');
+
+        deleteObject(id) {
+            const elem = this.svg.querySelector(`[data-id="${id}"]`);
+            if (elem) elem.remove();
+            this.objects.delete(id);
+            if (this.selectedId === id) this.selectedId = null;
+            this.updateUI();
+        }
+
+        duplicateObject(id) {
+            const original = this.objects.get(id);
+            if (!original) return;
+            const newId = this.addObject(original.type, `${original.name} (copy)`, original.x + 30, original.y + 30, original.fill, original.stroke, original.strokeWidth);
+            const newObj = this.objects.get(newId);
+            newObj.rotation = original.rotation;
+            newObj.scale = original.scale;
+            this.renderObject(newObj);
+            return newId;
+        }
+
+        getSelected() {
+            return this.selectedId ? this.objects.get(this.selectedId) : null;
+        }
+
+        updateUI() {
+            // Refresh object list
+            const container = document.getElementById('objectsList');
+            container.innerHTML = '';
+            this.objects.forEach(obj => {
+                const div = document.createElement('div');
+                div.className = `object-item ${this.selectedId === obj.id ? 'selected' : ''}`;
+                div.innerHTML = `
+                    <div class="object-icon">${obj.type === 'star' ? '⭐' : obj.type === 'circle' ? '●' : obj.type === 'rect' ? '■' : '▲'}</div>
+                    <div class="object-info">
+                        <div class="object-name">${obj.name}</div>
+                        <div class="object-type">${obj.type}</div>
+                    </div>
+                    <div class="visibility-toggle" data-id="${obj.id}" data-vis="${obj.visible}">
+                        ${obj.visible ? '👁️' : '👁️‍🗨️'}
+                    </div>
+                `;
+                div.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('visibility-toggle')) {
+                        this.selectObject(obj.id);
+                    }
+                });
+                const toggle = div.querySelector('.visibility-toggle');
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    obj.visible = !obj.visible;
+                    this.renderObject(obj);
+                    this.updateUI();
+                });
+                container.appendChild(div);
             });
-            // sync color picker swatch
-            colorSwatch.style.backgroundColor = fillColorPicker.value;
-            swVal.innerText = "2";
-            updateFromSliders();
-        }
-        
-        function changeTarget(targetId) {
-            currentTargetId = targetId;
-            // make sure we hide previous manual transforms? No, we reapply current slider values to new target
-            if (!animationActive) {
-                const elem = getCurrentElement();
-                if (elem) {
-                    applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
-                }
-            }
-            applyFillAndStroke();  // sync color and stroke for newly selected element
-            // also ensure visibility? all visible anyway.
-        }
-        
-        // ---- Animation engine: calculates transforms based on phase and type ----
-        function computeAnimatedTransform(type, phaseRad) {
-            let tx = 0, ty = 0, rot = 0, sc = 1;
-            const t = phaseRad; // radian value [0, 2PI] continuous
-            switch(type) {
-                case "orbit":
-                    tx = Math.cos(t) * 70;
-                    ty = Math.sin(t) * 50;
-                    rot = t * 30;
-                    sc = 1 + Math.sin(t * 1.5) * 0.15;
-                    break;
-                case "bounce":
-                    tx = Math.sin(t * 2) * 40;
-                    ty = Math.abs(Math.sin(t)) * 65 - 20;
-                    rot = Math.sin(t * 3) * 25;
-                    sc = 0.9 + Math.sin(t) * 0.2;
-                    break;
-                case "spinScale":
-                    tx = Math.sin(t * 1.7) * 45;
-                    ty = Math.cos(t * 1.3) * 35;
-                    rot = t * 90;
-                    sc = 0.7 + (Math.sin(t * 2) + 1) / 2.5;
-                    break;
-                case "wobble":
-                    tx = Math.sin(t * 2.2) * 30;
-                    ty = Math.sin(t * 1.4) * 25;
-                    rot = Math.sin(t * 4) * 35;
-                    sc = 1 + Math.sin(t * 3) * 0.18;
-                    break;
-                default: break;
-            }
-            return { tx, ty, rot, sc };
-        }
-        
-        let currentAnimType = "orbit";
-        let animPhase = 0;
-        let lastFrameTime = 0;
-        
-        function animationLoop(nowMs) {
-            if (!animationActive) return;
-            if (!lastFrameTime) lastFrameTime = nowMs;
-            let delta = Math.min(100, nowMs - lastFrameTime);
-            // speed control: convert speedMs to phase increment speed (radians per second)
-            // speed slider: lower ms => faster updates. we map: base speed factor 0.008 per ms? let's do rad increment
-            // such that at 30ms speed, it cycles ~ 2pi in ~2 seconds? fine: increment per frame = delta * (2*PI / (animationSpeedMs * 20))
-            // better control: use constant factor.
-            const speedFactor = 0.008 * (40 / animationSpeedMs);   // more responsive
-            let phaseInc = delta * speedFactor;
-            if (phaseInc > 0.2) phaseInc = 0.2;
-            animPhase = (animPhase + phaseInc) % (Math.PI * 2);
             
-            const elem = getCurrentElement();
-            if (elem) {
-                const { tx, ty, rot, sc } = computeAnimatedTransform(currentAnimType, animPhase);
-                // apply computed animation values directly
-                applyTransformAndStyleToElement(elem, tx, ty, rot, sc);
-                // also keep fill/stroke independent
-                applyFillAndStroke();
-                // update display sliders values for reference (optional but shows current)
-                translateXSlider.value = tx;
-                translateYSlider.value = ty;
-                rotateSlider.value = rot;
-                scaleSlider.value = sc;
-                txVal.innerText = Math.round(tx);
-                tyVal.innerText = Math.round(ty);
-                rotVal.innerText = Math.round(rot) + "°";
-                scaleVal.innerText = sc.toFixed(2);
+            // Update property panel if object selected
+            const selected = this.getSelected();
+            if (selected) {
+                document.getElementById('posXSlider').value = selected.x;
+                document.getElementById('posYSlider').value = selected.y;
+                document.getElementById('rotSlider').value = selected.rotation;
+                document.getElementById('scaleSlider').value = selected.scale;
+                document.getElementById('fillColor').value = selected.fill;
+                document.getElementById('strokeWidth').value = selected.strokeWidth;
+                document.getElementById('strokeColor').value = selected.stroke;
+                document.getElementById('animTypeSelect').value = selected.animation.type;
+                document.getElementById('animSpeed').value = selected.animation.speed;
+                
+                document.getElementById('posX').innerText = selected.x;
+                document.getElementById('posY').innerText = selected.y;
+                document.getElementById('rotVal').innerText = selected.rotation;
+                document.getElementById('scaleVal').innerText = selected.scale.toFixed(2);
+                document.getElementById('strokeVal').innerText = selected.strokeWidth;
             }
-            lastFrameTime = nowMs;
-            animationFrameId = requestAnimationFrame(animationLoop);
         }
-        
-        function startAnimation() {
-            if (animationActive) stopAnimation(false); // stop existing cleanly
-            animationActive = true;
-            currentAnimType = animTypeSelect.value;
-            animPhase = 0;
-            lastFrameTime = 0;
-            // disable manual sliders interference but still show updating values
-            animStatusSpan.innerHTML = '● Animating ▶';
-            activeAnimLabel.innerText = `✨ ${currentAnimType} active`;
-            // mark that sliders are overridden but values will still be updated by animation
-            animationFrameId = requestAnimationFrame(animationLoop);
+
+        selectObject(id) {
+            this.selectedId = id;
+            this.updateUI();
         }
-        
-        function stopAnimation(resetSlidersToCurrentElement = true) {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            animationActive = false;
-            animStatusSpan.innerHTML = '● Stopped';
-            activeAnimLabel.innerText = 'Manual transform';
-            // after stopping, we must restore the manual sliders values to the current element.
-            if (resetSlidersToCurrentElement) {
-                // read current manual values from sliders (but if animation changed them, sliders have last anim values)
-                // we actually have stored manualTx etc? but we need to sync: we set sliders to stored manual values? 
-                // we will set from internal last known manual before animation? but we maintain separate manual vars? we need to preserve.
-                // For simplicity, we take the current slider numbers (which reflect last animated frame) but user might want reset to last manual? better use stored
-                // we can re-read from sliders because they were updated by animation loop, but to be consistent: we use current sliders values as "new manual"
-                manualTx = parseFloat(translateXSlider.value);
-                manualTy = parseFloat(translateYSlider.value);
-                manualRot = parseFloat(rotateSlider.value);
-                manualScale = parseFloat(scaleSlider.value);
-                const elem = getCurrentElement();
-                if (elem) {
-                    applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
+
+        startGlobalAnimation() {
+            let lastTime = 0;
+            const animate = (currentTime) => {
+                if (!lastTime) lastTime = currentTime;
+                let delta = Math.min(32, currentTime - lastTime) / 1000;
+                if (delta > 0.01) {
+                    this.objects.forEach(obj => {
+                        if (obj.animation.type !== 'none' && obj.animation.active && obj.visible) {
+                            obj.animation.phase += delta * Math.PI * 2 * obj.animation.speed;
+                            if (obj.animation.phase > Math.PI * 2) obj.animation.phase -= Math.PI * 2;
+                            
+                            let tx = 0, ty = 0, rot = 0, scale = 1;
+                            const phase = obj.animation.phase;
+                            switch(obj.animation.type) {
+                                case 'orbit':
+                                    tx = Math.cos(phase) * 80;
+                                    ty = Math.sin(phase) * 60;
+                                    rot = phase * 50;
+                                    scale = 1 + Math.sin(phase * 2) * 0.2;
+                                    break;
+                                case 'bounce':
+                                    tx = Math.sin(phase * 2) * 50;
+                                    ty = Math.abs(Math.sin(phase)) * 70 - 35;
+                                    rot = Math.sin(phase * 3) * 30;
+                                    scale = 0.8 + Math.sin(phase) * 0.3;
+                                    break;
+                                case 'spin':
+                                    tx = 0;
+                                    ty = 0;
+                                    rot = phase * 360;
+                                    scale = 1;
+                                    break;
+                                case 'pulse':
+                                    tx = 0;
+                                    ty = 0;
+                                    rot = 0;
+                                    scale = 0.7 + Math.sin(phase * 2) * 0.3;
+                                    break;
+                                case 'wobble':
+                                    tx = Math.sin(phase * 3) * 30;
+                                    ty = Math.cos(phase * 2.5) * 25;
+                                    rot = Math.sin(phase * 4) * 40;
+                                    scale = 1 + Math.sin(phase * 3) * 0.15;
+                                    break;
+                            }
+                            
+                            obj.x += (tx - (obj.originalX || 0)) * 0.1;
+                            obj.y += (ty - (obj.originalY || 0)) * 0.1;
+                            obj.rotation += rot * 0.1;
+                            obj.scale += (scale - obj.scale) * 0.1;
+                            
+                            if (!obj.originalX) {
+                                obj.originalX = obj.x;
+                                obj.originalY = obj.y;
+                            }
+                            
+                            this.renderObject(obj);
+                        }
+                    });
+                    this.updateUI();
                 }
-                applyFillAndStroke();
+                lastTime = currentTime;
+                this.animationFrame = requestAnimationFrame(animate);
+            };
+            this.animationFrame = requestAnimationFrame(animate);
+        }
+
+        applyAnimationToSelected() {
+            const selected = this.getSelected();
+            if (!selected) return;
+            const animType = document.getElementById('animTypeSelect').value;
+            const speed = parseFloat(document.getElementById('animSpeed').value);
+            selected.animation.type = animType;
+            selected.animation.speed = speed;
+            selected.animation.active = animType !== 'none';
+            selected.animation.phase = 0;
+            selected.originalX = selected.x;
+            selected.originalY = selected.y;
+            document.getElementById('animGlobalStatus').innerHTML = `✨ ${animType} active`;
+            setTimeout(() => {
+                if (selected.animation.type === animType)
+                    document.getElementById('animGlobalStatus').innerHTML = `● Animating`;
+            }, 2000);
+        }
+
+        stopSelectedAnimation() {
+            const selected = this.getSelected();
+            if (selected) {
+                selected.animation.type = 'none';
+                selected.animation.active = false;
+                document.getElementById('animGlobalStatus').innerHTML = `● Idle`;
+                this.updateUI();
             }
         }
-        
-        // speed slider display
-        function updateSpeedDisplay() {
-            animationSpeedMs = parseFloat(animSpeedSlider.value);
-            speedValSpan.innerText = animationSpeedMs + "ms";
+
+        resetView() {
+            // Reset all objects positions to original
+            this.objects.forEach(obj => {
+                if (obj.originalX) {
+                    obj.x = obj.originalX;
+                    obj.y = obj.originalY;
+                }
+                obj.rotation = 0;
+                obj.scale = 1;
+                obj.animation.phase = 0;
+                this.renderObject(obj);
+            });
+            this.updateUI();
         }
-        
-        // Event Listeners
-        targetSelect.addEventListener('change', (e) => {
-            if (animationActive) stopAnimation();
-            changeTarget(e.target.value);
-        });
-        
-        translateXSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
-        translateYSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
-        rotateSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
-        scaleSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
-        fillColorPicker.addEventListener('input', () => { applyFillAndStroke(); if(!animationActive) updateFromSliders(); else applyFillAndStroke(); });
-        strokeWidthSlider.addEventListener('input', () => { applyFillAndStroke(); if(!animationActive) updateFromSliders(); else applyFillAndStroke(); });
-        
-        resetTransformBtn.addEventListener('click', () => { if(animationActive) stopAnimation(); resetTransforms(); });
-        resetAllBtn.addEventListener('click', () => { fullReset(); });
-        playBtn.addEventListener('click', () => { 
-            if(animationActive) stopAnimation(false);
-            currentAnimType = animTypeSelect.value;
-            startAnimation(); 
-        });
-        stopBtn.addEventListener('click', () => { if(animationActive) stopAnimation(true); });
-        animSpeedSlider.addEventListener('input', () => { updateSpeedDisplay(); });
-        animTypeSelect.addEventListener('change', () => { 
-            if(animationActive) {
-                currentAnimType = animTypeSelect.value;
-                activeAnimLabel.innerText = `✨ ${currentAnimType} active`;
-            }
-        });
-        captureBtn.addEventListener('click', () => {
-            const elem = getCurrentElement();
-            const transform = elem.getAttribute('transform') || "none";
-            console.log(`[SVG Snapshot] Target: ${currentTargetId} | fill: ${elem.getAttribute('fill')} | transform: ${transform}`);
-            alert(`Captured state in console. Transform: ${transform}`);
-        });
-        
-        // initial setup
-        updateSpeedDisplay();
-        fullReset();  // sets defaults nicely
-        // additional event to sync color swatch
-        function initColor() {
-            colorSwatch.style.backgroundColor = fillColorPicker.value;
+
+        exportSVG() {
+            const serializer = new XMLSerializer();
+            let svgString = serializer.serializeToString(this.svg);
+            const blob = new Blob([svgString], {type: "image/svg+xml"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "animation_export.svg";
+            a.click();
+            URL.revokeObjectURL(url);
         }
-        initColor();
-    })();
+    }
+
+    // Initialize application
+    const svg = document.getElementById('mainSvg');
+    const manager = new SVGManager(svg);
+
+    // Event listeners
+    document.getElementById('posXSlider').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { x: parseFloat(e.target.value) });
+    });
+    document.getElementById('posYSlider').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { y: parseFloat(e.target.value) });
+    });
+    document.getElementById('rotSlider').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { rotation: parseFloat(e.target.value) });
+    });
+    document.getElementById('scaleSlider').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { scale: parseFloat(e.target.value) });
+    });
+    document.getElementById('fillColor').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { fill: e.target.value });
+    });
+    document.getElementById('strokeWidth').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { strokeWidth: parseFloat(e.target.value) });
+    });
+    document.getElementById('strokeColor').addEventListener('input', (e) => {
+        const selected = manager.getSelected();
+        if (selected) manager.updateObjectProperties(selected.id, { stroke: e.target.value });
+    });
+    document.getElementById('addObjectBtn').addEventListener('click', () => {
+        const types = ['star', 'circle', 'rect', 'triangle'];
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const randomX = Math.random() * 800 - 400;
+        const randomY = Math.random() * 600 - 300;
+        manager.addObject(randomType, `Object ${manager.nextId}`, randomX, randomY, `hsl(${Math.random() * 360}, 70%, 60%)`, '#2c3e50', 2);
+    });
+    document.getElementById('duplicateBtn').addEventListener('click', () => {
+        if (manager.selectedId) manager.duplicateObject(manager.selectedId);
+    });
+    document.getElementById('applyAnimBtn').addEventListener('click', () => manager.applyAnimationToSelected());
+    document.getElementById('stopAnimBtn').addEventListener('click', () => manager.stopSelectedAnimation());
+    document.getElementById('resetCameraBtn').addEventListener('click', () => manager.resetView());
+    document.getElementById('exportBtn').addEventListener('click', () => manager.exportSVG());
 </script>
 </body>
 </html>
