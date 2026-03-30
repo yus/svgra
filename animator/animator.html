@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SVG Animator | Manipulate & Animate Vector Graphics</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* better UX for sliders, but text select allowed where needed */
+        }
+
+        body {
+            background: linear-gradient(145deg, #10141c 0%, #0b0e14 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }
+
+        /* main app card */
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(22, 28, 38, 0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0 0 0.2rem 0;
+            background: linear-gradient(135deg, #E9F1FF, #A5C9FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .sub {
+            color: #8f9bb3;
+            margin-bottom: 1.8rem;
+            border-left: 3px solid #3b82f6;
+            padding-left: 12px;
+            font-size: 0.9rem;
+        }
+
+        /* two column layout */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+            min-width: 260px;
+            background: #11161fcc;
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .canvas-panel {
+            flex: 2.5;
+            min-width: 320px;
+            background: #0f131ccc;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .svg-stage {
+            background: #ffffff0d;
+            border-radius: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 420px;
+            transition: all 0.2s;
+        }
+
+        svg {
+            background: #fefcf0;
+            border-radius: 24px;
+            box-shadow: 0 12px 28px -8px rgba(0,0,0,0.4);
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        svg:active {
+            cursor: grabbing;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #2a2f3a;
+            padding-bottom: 1rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            color: #cdd9ff;
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.3px;
+        }
+
+        input, select {
+            width: 100%;
+            background: #0a0e14;
+            border: 1px solid #2c3442;
+            padding: 0.6rem 0.8rem;
+            border-radius: 1rem;
+            color: white;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 5px;
+            background: #2a2f3a;
+            accent-color: #3b82f6;
+        }
+
+        button {
+            background: #1e293b;
+            border: none;
+            padding: 0.55rem 1rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid #334155;
+        }
+
+        button.primary {
+            background: #3b82f6;
+            border-color: #60a5fa;
+            box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+        }
+
+        button.primary:hover {
+            background: #2563eb;
+            transform: scale(0.97);
+        }
+
+        button:hover {
+            background: #2d3a4e;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .color-preview {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border-radius: 30px;
+            border: 2px solid white;
+            margin-left: 8px;
+            vertical-align: middle;
+            box-shadow: 0 1px 4px black;
+        }
+
+        .badge {
+            background: #00000066;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+
+        .anim-controls {
+            background: #070b10;
+            border-radius: 1.2rem;
+            padding: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        hr {
+            border-color: #2a2f3a;
+            margin: 12px 0;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .playing-badge {
+            color: #22c55e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <h1>✧ SVG Motion Forge ✧</h1>
+    <div class="sub">Manipulate shapes · Animate transforms · Real-time keyframe motion</div>
+
+    <div class="dashboard">
+        <!-- LEFT: manipulation panel -->
+        <div class="editor-panel">
+            <div class="control-group">
+                <div class="control-label">🎯 TARGET ELEMENT</div>
+                <select id="targetSelect">
+                    <option value="star">⭐ Star (center)</option>
+                    <option value="circle">🔵 Circle</option>
+                    <option value="rect">⬛ Rectangle</option>
+                    <option value="groupPath">🌀 Group (Spiral)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">📍 TRANSLATE X</div>
+                <input type="range" id="translateX" min="-120" max="120" step="1" value="0">
+                <span class="badge" id="txVal">0</span>
+                <div class="control-label">📍 TRANSLATE Y</div>
+                <input type="range" id="translateY" min="-120" max="120" step="1" value="0">
+                <span class="badge" id="tyVal">0</span>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">🔄 ROTATION (deg)</div>
+                <input type="range" id="rotate" min="-180" max="180" step="1" value="0">
+                <span class="badge" id="rotVal">0°</span>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">📏 SCALE</div>
+                <input type="range" id="scale" min="0.3" max="2.2" step="0.01" value="1">
+                <span class="badge" id="scaleVal">1.00</span>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">🎨 FILL COLOR</div>
+                <div class="flex-row">
+                    <input type="color" id="fillColor" value="#FFB347">
+                    <span id="colorSwatch" class="color-preview" style="background:#FFB347"></span>
+                </div>
+                <div class="control-label">✏️ STROKE WIDTH</div>
+                <input type="range" id="strokeWidth" min="0" max="8" step="0.5" value="2">
+                <span class="badge" id="swVal">2</span>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">✨ ANIMATION ENGINE</div>
+                <div class="flex-row">
+                    <button id="playAnimBtn" class="primary">▶ PLAY LOOP</button>
+                    <button id="stopAnimBtn">⏹️ STOP</button>
+                    <button id="resetTransformBtn">⟳ RESET XFORM</button>
+                </div>
+                <div style="margin-top: 8px;">
+                    <div class="control-label">🌀 ANIMATION TYPE</div>
+                    <select id="animTypeSelect">
+                        <option value="orbit">🌍 Orbit (Circle Motion)</option>
+                        <option value="bounce">🏀 Bounce Yoyo</option>
+                        <option value="spinScale">💫 Spin + Scale Pulse</option>
+                        <option value="wobble">🎢 Wobble Skew</option>
+                    </select>
+                </div>
+                <div class="control-label">⚡ SPEED (ms/step)</div>
+                <input type="range" id="animSpeed" min="10" max="80" step="2" value="28">
+                <span class="badge" id="speedVal">28ms</span>
+            </div>
+        </div>
+
+        <!-- RIGHT: SVG canvas & preview -->
+        <div class="canvas-panel">
+            <div class="svg-stage" id="svgStage">
+                <svg id="mainSvg" viewBox="0 0 500 400" width="100%" height="auto" style="background: radial-gradient(circle at 30% 20%, #fff8e7, #fff1d6);">
+                    <!-- definitions and groups -->
+                    <defs>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                            <feMerge>
+                                <feMergeNode in="offsetblur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- star element -->
+                    <polygon id="star" points="100,70 110,100 140,100 115,120 125,150 100,130 75,150 85,120 60,100 90,100" fill="#FFB347" stroke="#6b3e00" stroke-width="2" stroke-linecap="round" />
+
+                    <!-- circle element -->
+                    <circle id="circle" cx="150" cy="180" r="28" fill="#5dade2" stroke="#2c3e50" stroke-width="2" visibility="visible" />
+                    
+                    <!-- rectangle -->
+                    <rect id="rect" x="210" y="250" width="64" height="64" fill="#58d68d" stroke="#186a3b" stroke-width="2" rx="8" visibility="visible" />
+                    
+                    <!-- group: spiral path + extra flair -->
+                    <g id="groupPath" visibility="visible">
+                        <path d="M 320,120 C 340,100 360,130 350,160 C 340,190 310,200 290,180 C 280,165 285,145 305,140 C 320,138 335,150 330,170" fill="#a569bd" stroke="#4a235a" stroke-width="2.5" />
+                        <circle cx="332" cy="152" r="6" fill="#f4d03f" stroke="#b7950b" />
+                        <path d="M 348,128 L 360,118 L 368,128" fill="none" stroke="#f1c40f" stroke-width="2"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="anim-controls">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>🕹️ <span id="animStatus">● Stopped</span></span>
+                    <span class="playing-badge" id="activeAnimLabel">Manual transform</span>
+                </div>
+                <div class="flex-row" style="justify-content: flex-end; margin-top: 6px;">
+                    <button id="captureFrameBtn">📸 Snapshot (Log style)</button>
+                    <button id="resetAllBtn">🔄 Reset All (SVG)</button>
+                </div>
+            </div>
+            <small style="color:#6c7a91; margin-top: 10px; display: block; text-align: center;">click + drag on SVG not needed — use sliders or animation</small>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- DOM Elements ----------
+        const svg = document.getElementById('mainSvg');
+        const starElem = document.getElementById('star');
+        const circleElem = document.getElementById('circle');
+        const rectElem = document.getElementById('rect');
+        const groupElem = document.getElementById('groupPath');
+        
+        const targetSelect = document.getElementById('targetSelect');
+        const translateXSlider = document.getElementById('translateX');
+        const translateYSlider = document.getElementById('translateY');
+        const rotateSlider = document.getElementById('rotate');
+        const scaleSlider = document.getElementById('scale');
+        const fillColorPicker = document.getElementById('fillColor');
+        const strokeWidthSlider = document.getElementById('strokeWidth');
+        
+        const txVal = document.getElementById('txVal');
+        const tyVal = document.getElementById('tyVal');
+        const rotVal = document.getElementById('rotVal');
+        const scaleVal = document.getElementById('scaleVal');
+        const swVal = document.getElementById('swVal');
+        const colorSwatch = document.getElementById('colorSwatch');
+        
+        const playBtn = document.getElementById('playAnimBtn');
+        const stopBtn = document.getElementById('stopAnimBtn');
+        const resetTransformBtn = document.getElementById('resetTransformBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const captureBtn = document.getElementById('captureFrameBtn');
+        const animTypeSelect = document.getElementById('animTypeSelect');
+        const animSpeedSlider = document.getElementById('animSpeed');
+        const speedValSpan = document.getElementById('speedVal');
+        const animStatusSpan = document.getElementById('animStatus');
+        const activeAnimLabel = document.getElementById('activeAnimLabel');
+        
+        // ----- state -----
+        let currentTargetId = "star";    // star, circle, rect, groupPath
+        let animationFrameId = null;      // requestAnimationFrame id (smooth loop)
+        let animationActive = false;
+        let animClock = 0;                // time variable in radians or phase
+        let lastTimestamp = 0;
+        let animationSpeedMs = 28;        // affects step per frame roughly using delta time, but we'll do classic incremental phase
+        // For smoothness, we'll use requestAnimationFrame and update phase based on delta time & speed factor.
+        let phase = 0;                    // radians used for all animation types
+        
+        // target transform values from sliders (manual mode)
+        let manualTx = 0, manualTy = 0, manualRot = 0, manualScale = 1;
+        
+        // function to get current active element
+        function getCurrentElement() {
+            switch(currentTargetId) {
+                case "star": return starElem;
+                case "circle": return circleElem;
+                case "rect": return rectElem;
+                case "groupPath": return groupElem;
+                default: return starElem;
+            }
+        }
+        
+        // apply transform & fill/stroke to selected element (preserve others untouched)
+        function applyTransformAndStyleToElement(element, tx, ty, rot, scaleVal) {
+            if (!element) return;
+            const transform = `translate(${tx}, ${ty}) rotate(${rot}) scale(${scaleVal})`;
+            element.setAttribute('transform', transform);
+        }
+        
+        // apply fill & stroke width to current element only
+        function applyFillAndStroke() {
+            const elem = getCurrentElement();
+            if (!elem) return;
+            const newFill = fillColorPicker.value;
+            const newStrokeWidth = parseFloat(strokeWidthSlider.value);
+            elem.setAttribute('fill', newFill);
+            elem.setAttribute('stroke-width', newStrokeWidth);
+            colorSwatch.style.backgroundColor = newFill;
+            swVal.innerText = newStrokeWidth;
+        }
+        
+        // manual update from sliders (if animation not active, we push sliders to element)
+        function updateFromSliders() {
+            if (animationActive) return; // animation overrides transforms
+            manualTx = parseFloat(translateXSlider.value);
+            manualTy = parseFloat(translateYSlider.value);
+            manualRot = parseFloat(rotateSlider.value);
+            manualScale = parseFloat(scaleSlider.value);
+            
+            txVal.innerText = manualTx;
+            tyVal.innerText = manualTy;
+            rotVal.innerText = manualRot + "°";
+            scaleVal.innerText = manualScale.toFixed(2);
+            
+            const elem = getCurrentElement();
+            if (elem) {
+                applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
+            }
+            applyFillAndStroke(); // fill & stroke always live regardless of anim
+        }
+        
+        // reset transforms (sliders reset, manual mode)
+        function resetTransforms() {
+            if (animationActive) stopAnimation();
+            translateXSlider.value = "0";
+            translateYSlider.value = "0";
+            rotateSlider.value = "0";
+            scaleSlider.value = "1";
+            updateFromSliders();
+        }
+        
+        // full reset all svg attributes to base plus visibility
+        function fullReset() {
+            stopAnimation();
+            // reset target selection to star
+            targetSelect.value = "star";
+            changeTarget("star");
+            // reset sliders to defaults
+            translateXSlider.value = "0";
+            translateYSlider.value = "0";
+            rotateSlider.value = "0";
+            scaleSlider.value = "1";
+            fillColorPicker.value = "#FFB347";
+            strokeWidthSlider.value = "2";
+            // Force update current target
+            updateFromSliders();
+            // reset colors to default per element style? but current target gets fill, but all elements initial colors?
+            starElem.setAttribute("fill", "#FFB347");
+            circleElem.setAttribute("fill", "#5dade2");
+            rectElem.setAttribute("fill", "#58d68d");
+            groupElem.setAttribute("fill", "#a569bd");
+            groupElem.querySelector("circle")?.setAttribute("fill","#f4d03f");
+            // restore stroke width to base for all (just current element but also nice)
+            starElem.setAttribute("stroke-width","2");
+            circleElem.setAttribute("stroke-width","2");
+            rectElem.setAttribute("stroke-width","2");
+            groupElem.setAttribute("stroke-width","2.5");
+            // reapply transform removal: clear transforms on all elements
+            [starElem, circleElem, rectElem, groupElem].forEach(el => {
+                if(el) el.removeAttribute('transform');
+            });
+            // sync color picker swatch
+            colorSwatch.style.backgroundColor = fillColorPicker.value;
+            swVal.innerText = "2";
+            updateFromSliders();
+        }
+        
+        function changeTarget(targetId) {
+            currentTargetId = targetId;
+            // make sure we hide previous manual transforms? No, we reapply current slider values to new target
+            if (!animationActive) {
+                const elem = getCurrentElement();
+                if (elem) {
+                    applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
+                }
+            }
+            applyFillAndStroke();  // sync color and stroke for newly selected element
+            // also ensure visibility? all visible anyway.
+        }
+        
+        // ---- Animation engine: calculates transforms based on phase and type ----
+        function computeAnimatedTransform(type, phaseRad) {
+            let tx = 0, ty = 0, rot = 0, sc = 1;
+            const t = phaseRad; // radian value [0, 2PI] continuous
+            switch(type) {
+                case "orbit":
+                    tx = Math.cos(t) * 70;
+                    ty = Math.sin(t) * 50;
+                    rot = t * 30;
+                    sc = 1 + Math.sin(t * 1.5) * 0.15;
+                    break;
+                case "bounce":
+                    tx = Math.sin(t * 2) * 40;
+                    ty = Math.abs(Math.sin(t)) * 65 - 20;
+                    rot = Math.sin(t * 3) * 25;
+                    sc = 0.9 + Math.sin(t) * 0.2;
+                    break;
+                case "spinScale":
+                    tx = Math.sin(t * 1.7) * 45;
+                    ty = Math.cos(t * 1.3) * 35;
+                    rot = t * 90;
+                    sc = 0.7 + (Math.sin(t * 2) + 1) / 2.5;
+                    break;
+                case "wobble":
+                    tx = Math.sin(t * 2.2) * 30;
+                    ty = Math.sin(t * 1.4) * 25;
+                    rot = Math.sin(t * 4) * 35;
+                    sc = 1 + Math.sin(t * 3) * 0.18;
+                    break;
+                default: break;
+            }
+            return { tx, ty, rot, sc };
+        }
+        
+        let currentAnimType = "orbit";
+        let animPhase = 0;
+        let lastFrameTime = 0;
+        
+        function animationLoop(nowMs) {
+            if (!animationActive) return;
+            if (!lastFrameTime) lastFrameTime = nowMs;
+            let delta = Math.min(100, nowMs - lastFrameTime);
+            // speed control: convert speedMs to phase increment speed (radians per second)
+            // speed slider: lower ms => faster updates. we map: base speed factor 0.008 per ms? let's do rad increment
+            // such that at 30ms speed, it cycles ~ 2pi in ~2 seconds? fine: increment per frame = delta * (2*PI / (animationSpeedMs * 20))
+            // better control: use constant factor.
+            const speedFactor = 0.008 * (40 / animationSpeedMs);   // more responsive
+            let phaseInc = delta * speedFactor;
+            if (phaseInc > 0.2) phaseInc = 0.2;
+            animPhase = (animPhase + phaseInc) % (Math.PI * 2);
+            
+            const elem = getCurrentElement();
+            if (elem) {
+                const { tx, ty, rot, sc } = computeAnimatedTransform(currentAnimType, animPhase);
+                // apply computed animation values directly
+                applyTransformAndStyleToElement(elem, tx, ty, rot, sc);
+                // also keep fill/stroke independent
+                applyFillAndStroke();
+                // update display sliders values for reference (optional but shows current)
+                translateXSlider.value = tx;
+                translateYSlider.value = ty;
+                rotateSlider.value = rot;
+                scaleSlider.value = sc;
+                txVal.innerText = Math.round(tx);
+                tyVal.innerText = Math.round(ty);
+                rotVal.innerText = Math.round(rot) + "°";
+                scaleVal.innerText = sc.toFixed(2);
+            }
+            lastFrameTime = nowMs;
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+        
+        function startAnimation() {
+            if (animationActive) stopAnimation(false); // stop existing cleanly
+            animationActive = true;
+            currentAnimType = animTypeSelect.value;
+            animPhase = 0;
+            lastFrameTime = 0;
+            // disable manual sliders interference but still show updating values
+            animStatusSpan.innerHTML = '● Animating ▶';
+            activeAnimLabel.innerText = `✨ ${currentAnimType} active`;
+            // mark that sliders are overridden but values will still be updated by animation
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+        
+        function stopAnimation(resetSlidersToCurrentElement = true) {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            animationActive = false;
+            animStatusSpan.innerHTML = '● Stopped';
+            activeAnimLabel.innerText = 'Manual transform';
+            // after stopping, we must restore the manual sliders values to the current element.
+            if (resetSlidersToCurrentElement) {
+                // read current manual values from sliders (but if animation changed them, sliders have last anim values)
+                // we actually have stored manualTx etc? but we need to sync: we set sliders to stored manual values? 
+                // we will set from internal last known manual before animation? but we maintain separate manual vars? we need to preserve.
+                // For simplicity, we take the current slider numbers (which reflect last animated frame) but user might want reset to last manual? better use stored
+                // we can re-read from sliders because they were updated by animation loop, but to be consistent: we use current sliders values as "new manual"
+                manualTx = parseFloat(translateXSlider.value);
+                manualTy = parseFloat(translateYSlider.value);
+                manualRot = parseFloat(rotateSlider.value);
+                manualScale = parseFloat(scaleSlider.value);
+                const elem = getCurrentElement();
+                if (elem) {
+                    applyTransformAndStyleToElement(elem, manualTx, manualTy, manualRot, manualScale);
+                }
+                applyFillAndStroke();
+            }
+        }
+        
+        // speed slider display
+        function updateSpeedDisplay() {
+            animationSpeedMs = parseFloat(animSpeedSlider.value);
+            speedValSpan.innerText = animationSpeedMs + "ms";
+        }
+        
+        // Event Listeners
+        targetSelect.addEventListener('change', (e) => {
+            if (animationActive) stopAnimation();
+            changeTarget(e.target.value);
+        });
+        
+        translateXSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
+        translateYSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
+        rotateSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
+        scaleSlider.addEventListener('input', () => { if(!animationActive) updateFromSliders(); });
+        fillColorPicker.addEventListener('input', () => { applyFillAndStroke(); if(!animationActive) updateFromSliders(); else applyFillAndStroke(); });
+        strokeWidthSlider.addEventListener('input', () => { applyFillAndStroke(); if(!animationActive) updateFromSliders(); else applyFillAndStroke(); });
+        
+        resetTransformBtn.addEventListener('click', () => { if(animationActive) stopAnimation(); resetTransforms(); });
+        resetAllBtn.addEventListener('click', () => { fullReset(); });
+        playBtn.addEventListener('click', () => { 
+            if(animationActive) stopAnimation(false);
+            currentAnimType = animTypeSelect.value;
+            startAnimation(); 
+        });
+        stopBtn.addEventListener('click', () => { if(animationActive) stopAnimation(true); });
+        animSpeedSlider.addEventListener('input', () => { updateSpeedDisplay(); });
+        animTypeSelect.addEventListener('change', () => { 
+            if(animationActive) {
+                currentAnimType = animTypeSelect.value;
+                activeAnimLabel.innerText = `✨ ${currentAnimType} active`;
+            }
+        });
+        captureBtn.addEventListener('click', () => {
+            const elem = getCurrentElement();
+            const transform = elem.getAttribute('transform') || "none";
+            console.log(`[SVG Snapshot] Target: ${currentTargetId} | fill: ${elem.getAttribute('fill')} | transform: ${transform}`);
+            alert(`Captured state in console. Transform: ${transform}`);
+        });
+        
+        // initial setup
+        updateSpeedDisplay();
+        fullReset();  // sets defaults nicely
+        // additional event to sync color swatch
+        function initColor() {
+            colorSwatch.style.backgroundColor = fillColorPicker.value;
+        }
+        initColor();
+    })();
+</script>
+</body>
+</html>
